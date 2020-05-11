@@ -14,14 +14,20 @@ def main():
     if max != 'full':
         max = int(max)
     for line in fi:
-       data = json.loads(line)
-       body = data.get('body')
-       ents = []
-       for ent in data.get('entities'):
+        data = json.loads(line)
+        title = data.get('title')
+        abstract = data.get('abstract')
+        body = data.get('body')
+        if len(abstract) == 0:
+            text = title + ". " + body
+        else:
+            text = title + " " + abstract + "." + body
+        ents = []
+        for ent in data.get('entities'):
            ents.append((ent.get('start'), ent.get('end'), ent.get('type')))
-       data_list.append((body, {'entities': ents}))
-       i += 1
-       if i >= max:
+        data_list.append((body, {'entities': ents}))
+        i += 1
+        if i >= max:
            break
 
 
