@@ -1,39 +1,65 @@
-import json 
-import pickle
-import sys
+import spacy
+import json
 
-# pass desired training set size (as num of documents) 
-# as command line argument
-# pass 'full' to use the full dataset
-def main():
-    data_list = []
-    fi = open('../CORD-NER/CORD-NER-full.json', 'r')
-    i = 0
-    max = sys.argv[1]
-    str = 'training-data' + '-' + max
-    if max != 'full':
-        max = int(max)
-    for line in fi:
-        data = json.loads(line)
-        title = data.get('title')
-        abstract = data.get('abstract')
-        body = data.get('body')
-        if len(abstract) == 0:
-            text = title + ". " + body
+def handle_title(title, ents_data, ents, data_list, char_count):
+    length = len(title)
+    for ent in ents_data:
+        if ent.get('start') < length:
+            ents.append((ent.get('start'), ent.get('end'), ent.get('type')))
         else:
-            text = title + " " + abstract + "." + body
-        ents = []
-        for ent in data.get('entities'):
-           ents.append((ent.get('start'), ent.get('end'), ent.get('type')))
-        data_list.append((body, {'entities': ents}))
-        i += 1
-        if i >= max:
-           break
+            print("entity is ", ent)
+            ents_data = ents_data[ents_data.index(ent):]
+            break
+    data_list.append((title, {'entities': ents}))
+    char_count += length
+
+def handle_abstract(abstract, ents_data, ents, data_list, char_count):
+    for sent in abstract.sents:
+        print(sent)
+
+def handle_body(body, ents_data, ents, data_list, char_count):
+    for sent in body.sents:
+        length = len(sent)
+        
+
+def main():
+    nlp = spacy.load("en_core_sci_sm")
+    data_list = []
+    with open('../CORD-NER/CORD-NER-full.json', 'r') as data_file:
+        for data_line in data_file:
+            char_count = 0
+            data = json.loads(data_line)
+           
+            title = data.get('title')
+            ents_data = data.get('entities') # list of {'text', 'start', 'end', 'type'} for entities
+            ents = []
+            abstract = data.get('abstract')
+            body = data.get('body')
+            abs_doc = nlp(abstract)
+            body_doc = nlp(body)
+            handle_title(title, ents_data, ents, data_list, char_count)
+            handle_abstract(abs_doc, ents_data, ents, data_list, char_count)
+            handle_body(body_doc, ents_data, ents, data_list, char_count)
 
 
-    fo = open(str, 'wb')
-    pickle.dump(data_list, fo)
- 
-    fo.close()
-    fi.close()
+            print(data_list)
+            break
+
 main()
+
+"""
+    char count = 0
+    for each sentence:
+        len = num of chars in sentence
+        if its the first sentence:
+            store sentence and entities with offsets in data list
+            char count += len
+        else:    
+            find entities that have a start offset between 
+            char count and char count + len (its in the sentence)
+            new offset for each entity is offset - char count
+            store sentence and entities with new offsets in data list
+
+        
+
+"""
