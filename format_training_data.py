@@ -1,26 +1,45 @@
 import spacy
 import json
 
-def handle_title(title, ents_data, ents, data_list, char_count):
+def handle_title(title, ents_data, data_list, char_count):
+    ents = []
     length = len(title)
+    print("Title is: %s" % title)
+    print("Length of title is: %d" % length)
     for ent in ents_data:
         if ent.get('start') < length:
             ents.append((ent.get('start'), ent.get('end'), ent.get('type')))
+            print("Added %s with start %d and end %d" % (ent.get('text'), ent.get('start') - char_count, ent.get('end') - char_count))
         else:
-            print("entity is ", ent)
+        #    print("entity is ", ent)
             ents_data = ents_data[ents_data.index(ent):]
             break
     data_list.append((title, {'entities': ents}))
-    char_count += length
+    return char_count + length + 2, ents_data
 
-def handle_abstract(abstract, ents_data, ents, data_list, char_count):
+def handle_abstract(abstract, ents_data, data_list, char_count):
     for sent in abstract.sents:
         print(sent)
 
-def handle_body(body, ents_data, ents, data_list, char_count):
-    for sent in body.sents:
+def handle_body(body, ents_data, data_list, char_count):
+    ents = []
+    for s in body.sents:
+        sent = s.text
         length = len(sent)
-        
+        print("Sentence is: %s" % sent)
+        print("Sentence is %d chars long" % length)
+        print("Num of chars before sentence is: %d" % char_count)
+        for ent in ents_data:
+            if ent.get('start') < (char_count + length):
+                ents.append((ent.get('start') - char_count, ent.get('end') - char_count, ent.get('type')))
+                print("Added %s with start %d and end %d" % (ent.get('text'), ent.get('start') - char_count, ent.get('end') - char_count))
+            else:
+                #print("entity is ", ent)
+                ents_data = ents_data[ents_data.index(ent):]
+                break
+        char_count += length + 1
+        data_list.append((sent, {'entities': ents}))
+    
 
 def main():
     nlp = spacy.load("en_core_sci_sm")
@@ -32,17 +51,17 @@ def main():
            
             title = data.get('title')
             ents_data = data.get('entities') # list of {'text', 'start', 'end', 'type'} for entities
-            ents = []
             abstract = data.get('abstract')
             body = data.get('body')
             abs_doc = nlp(abstract)
             body_doc = nlp(body)
-            handle_title(title, ents_data, ents, data_list, char_count)
-            handle_abstract(abs_doc, ents_data, ents, data_list, char_count)
-            handle_body(body_doc, ents_data, ents, data_list, char_count)
+            char_count, ents_data = handle_title(title, ents_data, data_list, char_count)
+            handle_abstract(abs_doc, ents_data, data_list, char_count)
+            handle_body(body_doc, ents_data, data_list, char_count)
 
 
-            print(data_list)
+            # for data in data_list:
+            #     print(data)
             break
 
 main()
