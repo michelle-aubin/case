@@ -1,5 +1,7 @@
 import spacy
 import json
+import pickle
+import plac
 
 def handle_title(title, ents_data, data_list):
     ents = []
@@ -64,10 +66,13 @@ def handle_body(body, ents_data, data_list):
         data_list.append((sent, {'entities': ents}))
 
     
-
-def main():
+@plac.annotations(
+    n_docs=("Number of documents to use as training data. Defaults to the full amount in the corpus.", "option", "n", int),
+)
+def main(n_docs=30000):
     nlp = spacy.load("en_core_sci_sm")
     data_list = []
+    i = 0
     with open('../CORD-NER/CORD-NER-full.json', 'r') as data_file:
         for data_line in data_file:
             char_count = 0
@@ -82,5 +87,13 @@ def main():
             ents_data = handle_title(title, ents_data, data_list)
             ents_data = handle_abstract(abs_doc, ents_data, data_list)
             handle_body(body_doc, ents_data, data_list)
+            i += 1
+            if i > n_docs:
+                break
+    file_name = 'training-data' + '-' + str(n_docs)
+    with open(file_name, 'wb') as out_file:
+        pickle.dump(data_list, out_file)
+    
 
-main()
+if __name__ == "__main__":
+    plac.call(main)
