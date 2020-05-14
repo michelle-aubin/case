@@ -28,7 +28,7 @@ def main(train_file):
     train_file_split = train_file.split("-")
     file_name = 'cli-training-data' + '-' + train_file_split[2] +'.json'
     with open(file_name, 'w') as json_file:
-        json.dump(json_data, json_file)
+        json.dump([json_data], json_file)
 
 if __name__ == "__main__":
     start_time = time.time()
