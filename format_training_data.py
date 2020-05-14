@@ -72,7 +72,7 @@ def handle_body(body, ents_data, data_list):
     end=("ID of the last document to use as training/evaluation data. Defaults to 29499 (last doc in corpus)", "option", "e", int),
 )
 def main(type, start=0, end=29499):
-    nlp = spacy.load("en_core_sci_sm")
+    nlp = spacy.load("en_core_sci_sm", disable=["ner"])
     data_list = []
     i = 0
     with open('../CORD-NER/CORD-NER-full.json', 'r') as data_file:
