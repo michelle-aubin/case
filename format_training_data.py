@@ -78,6 +78,7 @@ def main(type, start=0, end=29499):
     with open('../CORD-NER/CORD-NER-full.json', 'r') as data_file:
         for data_line in data_file:
             if i < start:
+                i += 1
                 continue
             if i > end:
                 break
