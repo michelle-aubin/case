@@ -19,6 +19,7 @@ import spacy
 from spacy.util import minibatch, compounding
 import pickle
 import sys
+import time
 
 
 
@@ -82,7 +83,7 @@ def main(train_file, model=None, output_dir=None, n_iter=100):
                     drop=0.5,  # dropout - make it harder to memorise data
                     losses=losses,
                 )
-            print("Losses", losses)
+         #   print("Losses", losses)
 
     # test the trained model
     for text, _ in train_data:
@@ -98,7 +99,7 @@ def main(train_file, model=None, output_dir=None, n_iter=100):
         nlp.to_disk(output_dir)
         print("Saved model to", output_dir)
 
-        # # test the saved model
+         # test the saved model
         print("Loading from", output_dir)
         nlp2 = spacy.load(output_dir)
         for text, _ in train_data:
@@ -108,8 +109,9 @@ def main(train_file, model=None, output_dir=None, n_iter=100):
 
 
 if __name__ == "__main__":
-
+    start_time = time.time()
     plac.call(main)
+    print("-- %s seconds --" % (time.time() - start_time))
 
     # Expected output:
     # Entities [('Shaka Khan', 'PERSON')]
