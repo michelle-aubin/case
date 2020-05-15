@@ -91,7 +91,7 @@ def main(type, start=0, end=29499):
     nlp = spacy.load("en_core_web_sm", disable=["ner"])
     data_list = []
     i = 0
-    with open('../CORD-NER/CORD-NER-full.json', 'r') as data_file:
+    with open('CORD-NER/CORD-NER-full.json', 'r') as data_file:
         for data_line in data_file:
             if i < start:
                 i += 1
@@ -103,12 +103,9 @@ def main(type, start=0, end=29499):
             data = json.loads(data_line)
            
             title = data.get('title')
-            print(title)
             ents_data = data.get('entities') # list of {'text', 'start', 'end', 'type'} for entities
             abstract = data.get('abstract')
-            print(abstract)
             body = data.get('body')
-            print(body)
             abs_doc = nlp(abstract)
             body_doc = nlp(body)
             title_doc = nlp(title)
@@ -116,7 +113,7 @@ def main(type, start=0, end=29499):
             ents_data = handle_abstract(abs_doc, ents_data, data_list)
             handle_body(body_doc, ents_data, data_list)
             i += 1
-    file_name = type + '-data' + '-' + str(start) + '-' + str(end) + '.json'
+    file_name = 'data/' + type + '-data' + '-' + str(start) + '-' + str(end) + '.json'
     # convert list of docs into json format used by spacy train command
     json_data = docs_to_json(data_list)
     with open(file_name, 'w') as json_file:
