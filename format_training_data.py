@@ -2,10 +2,11 @@ import spacy
 import json
 import pickle
 import plac
+from spacy.gold import biluo_tags_from_offsets, spans_from_biluo_tags, docs_to_json
 
-def handle_title(title, ents_data, data_list):
+def handle_title(title_doc, ents_data, data_list):
     ents = []
-    length = len(title)
+    title = title_doc.text
     start_ind = 0
     for ent in ents_data:
         ent_text = ent.get('text')
@@ -18,10 +19,17 @@ def handle_title(title, ents_data, data_list):
         # entity is not in the sentence
         # take all found entities out and return
         else:
+            tags = biluo_tags_from_offsets(title_doc, ents)
+            entities = spans_from_biluo_tags(title_doc, tags)
+            title_doc.ents = entities
+            # add to training data
+            data_list.append(title_doc)
             return ents_data[ents_data.index(ent):]
 
 
 def handle_abstract(abstract, ents_data, data_list):
+    if ents_data == None:
+        return None
     for s in abstract.sents:
         ents = []
         sent = s.text
@@ -39,12 +47,17 @@ def handle_abstract(abstract, ents_data, data_list):
             else:
                 ents_data = ents_data[ents_data.index(ent):]
                 break
+        tags = biluo_tags_from_offsets(abstract, ents)
+        entities = spans_from_biluo_tags(abstract, tags)
+        abstract.ents = entities
         # add to training data
-        data_list.append((sent, {'entities': ents}))
+        data_list.append(abstract)
     return ents_data
 
 
 def handle_body(body, ents_data, data_list):
+    if ents_data == None:
+        return None
     for s in body.sents:
         ents = []
         sent = s.text
@@ -62,8 +75,11 @@ def handle_body(body, ents_data, data_list):
             else:
                 ents_data = ents_data[ents_data.index(ent):]
                 break
+        tags = biluo_tags_from_offsets(body, ents)
+        entities = spans_from_biluo_tags(body, tags)
+        body.ents = entities
         # add to training data
-        data_list.append((sent, {'entities': ents}))
+        data_list.append(body)
 
     
 @plac.annotations(
@@ -72,7 +88,7 @@ def handle_body(body, ents_data, data_list):
     end=("ID of the last document to use as training/evaluation data. Defaults to 29499 (last doc in corpus)", "option", "e", int),
 )
 def main(type, start=0, end=29499):
-    nlp = spacy.load("en_core_sci_sm", disable=["ner"])
+    nlp = spacy.load("en_core_web_sm", disable=["ner"])
     data_list = []
     i = 0
     with open('../CORD-NER/CORD-NER-full.json', 'r') as data_file:
@@ -82,22 +98,29 @@ def main(type, start=0, end=29499):
                 continue
             if i > end:
                 break
+            print("Doc %d" % i)
             char_count = 0
             data = json.loads(data_line)
            
             title = data.get('title')
+            print(title)
             ents_data = data.get('entities') # list of {'text', 'start', 'end', 'type'} for entities
             abstract = data.get('abstract')
+            print(abstract)
             body = data.get('body')
+            print(body)
             abs_doc = nlp(abstract)
             body_doc = nlp(body)
-            ents_data = handle_title(title, ents_data, data_list)
+            title_doc = nlp(title)
+            ents_data = handle_title(title_doc, ents_data, data_list)
             ents_data = handle_abstract(abs_doc, ents_data, data_list)
             handle_body(body_doc, ents_data, data_list)
             i += 1
-    file_name = type + '-data' + '-' + str(start) + '-' + str(end)
-    with open(file_name, 'wb') as out_file:
-        pickle.dump(data_list, out_file)
+    file_name = type + '-data' + '-' + str(start) + '-' + str(end) + '.json'
+    # convert list of docs into json format used by spacy train command
+    json_data = docs_to_json(data_list)
+    with open(file_name, 'w') as json_file:
+        json.dump([json_data], json_file)
     
 
 if __name__ == "__main__":
