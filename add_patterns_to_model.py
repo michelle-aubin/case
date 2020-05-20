@@ -8,16 +8,13 @@ def main():
     nlp = spacy.load("en_core_sci_sm")
     web_nlp = spacy.load("en_core_web_sm", disable=["tagger", "parser"])
     ruler = EntityRuler(nlp).from_disk("patterns.jsonl")
-    nlp.add_pipe(ruler, before="ner")
     nlp.add_pipe(web_nlp.get_pipe("ner"), before="ner", name="web_ner")
-    text = """
-    A novel infectious disease, caused by severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2), was detected in Wuhan, China, in December 2019. The disease (COVID-19) spread rapidly, reaching epidemic proportions in China, and has been found in 27 other countries. As of February 27, 2020, over 82,000 cases of COVID-19 were reported, with > 2800 deaths.
-    """
-    doc = nlp(text)
+    nlp.add_pipe(ruler, before="web_ner")
 
-    for ent in doc.ents:
-        print("%s: %s" % (ent.text, ent.label_))
+    # could add but doesn't perform very well on the few tests i did 
+    #bc5cdr_nlp = spacy.load("en_ner_bc5cdr_md", disable=["tagger", "parser"])
+    #nlp.add_pipe(bc5cdr_nlp.get_pipe("ner"), before="ner", name="bc5cdr_ner")
 
-
-    #nlp.to_disk("/custom_model")
+    # save model to disk
+    nlp.to_disk("custom_model/")
 main()
