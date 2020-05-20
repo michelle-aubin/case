@@ -1,3 +1,5 @@
+{"label": "CORONAVIRUS", "pattern": [{"LOWER": "sars-cov-2"}]}
+{"label": "CORONAVIRUS", "pattern": [{"LOWER": "covid-19"}]}
 {"label": "CORONAVIRUS", "pattern": [{"LOWER": "sars"}, {"LOWER": "cov"}, {"LOWER": "2"}]}
 {"label": "EVOLUTION", "pattern": [{"LOWER": "phylogenetic"}]}
 {"label": "WILDLIFE", "pattern": [{"LOWER": "bat"}]}
