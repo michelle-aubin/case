@@ -32,7 +32,7 @@ def main():
                     ent_text = ent.get("text")
                     if ent_type in new_labels and ent_text not in ents_seen:
                         ents_seen.add(ent_text)
-                        tokens = ent_text.split()
+                        tokens = ent_text.split("_")
                         tokens_list = []
                         for t in tokens:
                             tokens_list.append({"LOWER": t})
