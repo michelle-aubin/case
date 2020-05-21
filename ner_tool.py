@@ -14,10 +14,13 @@ def main():
             row_num = -1
             for row in metadata:
                 row_num += 1
+                if row_num < 42:
+                    continue
                 print("Doc %d" % row_num)
                 pdf_url = row.get("pdf_json_files")
                 if pdf_url:
-                    with urllib.request.urlopen(URL + pdf_url) as url:
+                    pdf_urls = pdf_url.split("; ")
+                    with urllib.request.urlopen(URL + pdf_urls[0]) as url:
                         data = json.loads(url.read().decode())
                         texts = [entry.get("text") for entry in data.get("abstract")]
                         for entry in data.get("body_text"):
