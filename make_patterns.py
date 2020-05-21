@@ -34,7 +34,7 @@ def main():
                                 tokens_list.append({"LOWER": token})
                         pattern = {"label": ent_type, "pattern": tokens_list}
                         # just split text on spaces instead of using spacy to tokenize?
-                        with open("more_patterns.jsonl", "a") as f:
+                        with open("patterns_wo_disease_or_syndrome.jsonl", "a") as f:
                             json.dump(pattern, f)
                             f.write("\n")
 
