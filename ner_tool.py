@@ -1,6 +1,7 @@
 import csv
 import urllib.request, json 
 import spacy
+import time
 
 URL = "https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/latest/"
 
@@ -37,11 +38,14 @@ def main():
                                     data_str = "|".join(data_list) + "\n"
                                     f_out.write(data_str)
 
-                        
+            
 
                 # paragraph id is entry is index in list of "text" entries in abstract and body
                 # ex abstract: [0,1,2], body_text: [3,4,5]     
 
-main()
+if __name__ == "__main__":
+    start_time = time.time()
+    main()
+    print("-- %s seconds --" % (time.time() - start_time))
             
 
