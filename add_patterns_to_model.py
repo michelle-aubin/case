@@ -10,13 +10,16 @@ def main():
     ruler = EntityRuler(nlp).from_disk("patterns.jsonl")
     nlp.add_pipe(web_nlp.get_pipe("ner"), after="parser", name="web_ner")
     nlp.add_pipe(ruler, before="web_ner")
-
-    # could add but doesn't perform very well on the few tests i did 
+ 
     bc5cdr_nlp = spacy.load("en_ner_bc5cdr_md", disable=["tagger", "parser"])
     nlp.add_pipe(bc5cdr_nlp.get_pipe("ner"), after="web_ner", name="bc5cdr_ner")
 
-  #  bionlp13cg_nlp = spacy.load("en_ner_bionlp13cg_md", disable=["tagger", "parser"])
-  #  nlp.add_pipe(bionlp13cg_nlp.get_pipe("ner"), before="bc5cdr_ner", name="bionlp13cg_ner")
+    bionlp13cg_nlp = spacy.load("en_ner_bionlp13cg_md", disable=["tagger", "parser"])
+    nlp.add_pipe(bionlp13cg_nlp.get_pipe("ner"), after="bc5cdr_ner", name="bionlp13cg_ner")
+    labels = ["CANCER", "ORGAN", "TISSUE", "ORGANISM", "CELL", "AMINO_ACID", "GENE_OR_GENE_PRODUCT", "SIMPLE_CHEMICAL", "ANATOMICAL_SYSTEM", "IMMATERIAL_ANATOMICAL_ENTITY", "MULTI-TISSUE_STRUCTURE", "DEVELOPING_ANATOMICAL_STRUCTURE", "ORGANISM_SUBDIVISION", "CELLULAR_COMPONENT"]
+
+    for label in labels:
+        nlp.vocab.strings.add(label)
 
     text = """
     During the study period, respiratory specimens (sputum, nasopharyngeal aspiration, endotracheal secretion, and bronchoalveolar lavage) for M. pneumoniae culture were obtained from patients with upper or lower respiratory tract infections seen as inpatients or in the outpatient or emergency departments. Respiratory specimens were aslo Gram-stained and cultured for bacteria and viruses. M. pneumoniae serological tests for IgG or IgM were not available at KAUH during the study period. All positive culture results were obtained from the Microbiology laboratory records. Charts of patients were reviewed with standardized data collection. Information collected included patients' demographics, comorbidities, clinical manifestations, complications, and outcome.
