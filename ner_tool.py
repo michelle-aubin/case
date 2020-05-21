@@ -7,8 +7,8 @@ URL = "https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/latest/"
 def main():
     nlp = spacy.load("custom_model")
     print("Loaded model")
-    with open("metadata.csv", "r", errors="ignore") as f_meta:
-        with open("ner_results.txt", "a") as f_out:
+    with open("metadata.csv", "r", encoding="utf-8") as f_meta:
+        with open("ner_results.txt", "a", encoding="utf-8") as f_out:
             metadata = csv.DictReader(f_meta)
             row_num = -1
             for row in metadata:
@@ -37,8 +37,6 @@ def main():
                                     data_str = "|".join(data_list) + "\n"
                                     f_out.write(data_str)
 
-                break
-                        
                         
 
                 # paragraph id is entry is index in list of "text" entries in abstract and body
