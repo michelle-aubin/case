@@ -17,7 +17,6 @@ def main():
                 print("Doc %d" % row_num)
                 pdf_url = row.get("pdf_json_files")
                 if pdf_url:
-                    print("Has pdf")
                     with urllib.request.urlopen(URL + pdf_url) as url:
                         data = json.loads(url.read().decode())
                         texts = [entry.get("text") for entry in data.get("abstract")]
