@@ -3,18 +3,11 @@ import spacy
 
 # make a .jsonl file of patterns that can be used in the EntityRuler
 def main():
-    # what labels should I add?
-    new_labels = {"CORONAVIRUS",
-                "VIRAL_PROTEIN",
-                "LIVESTOCK",
-                "WILDLIFE",
-                "EVOLUTION",
-                "PHYSICAL_SCIENCE",
-                "SUBSTRATE",
-                "MATERIAL",
-                "IMMUNE_RESPONSE"}
-    nlp = spacy.load("en_core_web_sm", disable=["ner"])
-    # disable tagger too? jsut need pipeline components to tokenize
+    new_labels = set()
+    with open("chosen_types_from_CORD-NER.txt", "r") as label_file:
+        for label in label_file:
+            new_labels.add(label.strip())
+
     with open('CORD-NER/CORD-NER-ner.json', 'r') as data_file:
         ents_seen = set()
         for data_line in data_file:
@@ -32,13 +25,16 @@ def main():
                     ent_text = ent.get("text")
                     if ent_type in new_labels and ent_text not in ents_seen:
                         ents_seen.add(ent_text)
-                        tokens = ent_text.split("_")
+                        tokens = ent_text.split(" ")
+                        for token in tokens:
+                            tokens[tokens.index(token)] = token.split("_")
                         tokens_list = []
                         for t in tokens:
-                            tokens_list.append({"LOWER": t})
+                            for token in t:
+                                tokens_list.append({"LOWER": token})
                         pattern = {"label": ent_type, "pattern": tokens_list}
                         # just split text on spaces instead of using spacy to tokenize?
-                        with open("patterns.jsonl", "a") as f:
+                        with open("more_patterns.jsonl", "a") as f:
                             json.dump(pattern, f)
                             f.write("\n")
 
