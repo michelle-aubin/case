@@ -12,14 +12,13 @@ URL = "https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/latest/"
    end=("Doc ID to end on (included in NER results).", "positional", None, int)
 )
 def main(start, end):
+    model_time = time.time()
     nlp = spacy.load("custom_model3", disable=["tagger"])
-    print("Loaded model")
+    print("Loading model took %s seconds --" % (time.time() - model_time))
     out_file = "test" + str(start) + "-" + str(end) +".txt"
     with open("metadata.csv", "r", encoding="utf-8") as f_meta:
         with open(out_file, "w", encoding="utf-8") as f_out:
-            dict_start = time.time()
             metadata = csv.DictReader(f_meta)
-            print("DictReader took %s seconds --" % (time.time() - dict_start))
             row_num = -1
             for row in metadata:
                 row_num += 1
@@ -43,6 +42,7 @@ def main(start, end):
                         pipe_start = time.time()
                         docs = list(nlp.pipe(texts))
                         print("NLP pipe took %s seconds --" % (time.time() - pipe_start))
+                        output_start = time.time()
                         for doc in docs:
                             par_id = docs.index(doc)
                             sent_id = -1
@@ -56,6 +56,7 @@ def main(start, end):
                                                     str(ent.end_char-ent.sent.start_char)]
                                     data_str = "|".join(data_list) + "\n"
                                   #  f_out.write(data_str)
+                        print("Building output took %s seconds --" % (time.time() - output_start))
 
             
 
