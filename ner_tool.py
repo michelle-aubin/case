@@ -12,12 +12,14 @@ URL = "https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/latest/"
    end=("Doc ID to end on (included in NER results).", "positional", None, int)
 )
 def main(start, end):
-    nlp = spacy.load("custom_model")
+    nlp = spacy.load("custom_model3", disable=["tagger"])
     print("Loaded model")
-    out_file = "ner-results-" + str(start) + "-" + str(end) +".txt"
+    out_file = "test" + str(start) + "-" + str(end) +".txt"
     with open("metadata.csv", "r", encoding="utf-8") as f_meta:
         with open(out_file, "w", encoding="utf-8") as f_out:
+            dict_start = time.time()
             metadata = csv.DictReader(f_meta)
+            print("DictReader took %s seconds --" % (time.time() - dict_start))
             row_num = -1
             for row in metadata:
                 row_num += 1
@@ -29,12 +31,18 @@ def main(start, end):
                 pdf_url = row.get("pdf_json_files")
                 if pdf_url:
                     pdf_urls = pdf_url.split("; ")
+                    url_start = time.time()
                     with urllib.request.urlopen(URL + pdf_urls[0]) as url:
+                        print("URL Request took %s seconds --" % (time.time() - url_start))
+                        json_start = time.time()
                         data = json.loads(url.read().decode())
+                        print("JSON load took %s seconds --" % (time.time() - json_start))
                         texts = [entry.get("text") for entry in data.get("abstract")]
                         for entry in data.get("body_text"):
                             texts.append(entry.get("text"))
+                        pipe_start = time.time()
                         docs = list(nlp.pipe(texts))
+                        print("NLP pipe took %s seconds --" % (time.time() - pipe_start))
                         for doc in docs:
                             par_id = docs.index(doc)
                             sent_id = -1
@@ -47,7 +55,7 @@ def main(start, end):
                                                     str(ent.start_char-ent.sent.start_char), 
                                                     str(ent.end_char-ent.sent.start_char)]
                                     data_str = "|".join(data_list) + "\n"
-                                    f_out.write(data_str)
+                                  #  f_out.write(data_str)
 
             
 
