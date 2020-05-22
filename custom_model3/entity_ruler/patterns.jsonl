@@ -34,6 +34,8 @@
 {"label":"CORONAVIRUS","pattern":[{"LOWER":"embecovirus"}]}
 {"label":"CORONAVIRUS","pattern":[{"LOWER":"cov"},{"LOWER":"nl63"}]}
 {"label":"CORONAVIRUS","pattern":[{"LOWER":"pdcov"}]}
+{"label":"CORONAVIRUS","pattern":[{"LOWER":"sars-cov-2"}]}
+{"label":"CORONAVIRUS","pattern":[{"LOWER":"covid-19"}]}
 {"label":"CORONAVIRUS","pattern":[{"LOWER":"hcov"},{"LOWER":"229e"},{"LOWER":"and"},{"LOWER":"hcov"},{"LOWER":"nl63"}]}
 {"label":"CORONAVIRUS","pattern":[{"LOWER":"hcov"},{"LOWER":"oc43"},{"LOWER":"and"},{"LOWER":"hcov"},{"LOWER":"hku1"}]}
 {"label":"CORONAVIRUS","pattern":[{"LOWER":"hcov"}]}
