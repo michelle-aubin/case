@@ -3,6 +3,7 @@ import urllib.request, json
 import spacy
 import time
 import plac
+import numpy as np
 
 URL = "https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/latest/"
 
@@ -18,10 +19,9 @@ def main(start, end):
     out_file = "test" + str(start) + "-" + str(end) +".txt"
     with open("metadata.csv", "r", encoding="utf-8") as f_meta:
         with open(out_file, "w", encoding="utf-8") as f_out:
+            articles = []
             metadata = csv.DictReader(f_meta)
-            row_num = -1
-            for row in metadata:
-                row_num += 1
+            for row_num, row in enumerate(metadata):
                 if row_num < start:
                     continue
                 elif row_num > end:
@@ -40,25 +40,26 @@ def main(start, end):
                         for entry in data.get("body_text"):
                             texts.append(entry.get("text"))
                         full = "|!|".join(texts)
-                        full_texts = [full for i in range(60)]
-                        pipe_start = time.time()
-                        docs = list(nlp.pipe(full_texts, batch_size=20))
-                        print("NLP pipe took %s seconds --" % (time.time() - pipe_start))
-                        output_start = time.time()
-                        for doc in docs:
-                            par_id = docs.index(doc)
-                            sent_id = -1
-                            for sent in doc.sents:
-                                sent_id += 1
-                                ents = list(sent.ents)
-                                for ent in ents:
-                                    # entity name|type|doc id (row num in metadata.csv)|paragraph id|sent id|offset start|offset end
-                                    data_list = [ent.text, ent.label_, str(row_num), str(par_id), str(sent_id), 
-                                                    str(ent.start_char-ent.sent.start_char), 
-                                                    str(ent.end_char-ent.sent.start_char)]
-                                    data_str = "|".join(data_list) + "\n"
-                                  #  f_out.write(data_str)
-                        print("Building output took %s seconds --" % (time.time() - output_start))
+                        # do batches of 5 docs
+                        articles.append(full)
+                        if row_num % 5 == 0:
+                            pipe_start = time.time()
+                            docs = list(nlp.pipe(articles))
+                            print("NLP pipe took %s seconds --" % (time.time() - pipe_start))
+                            output_start = time.time()
+                            for par_id, doc in enumerate(docs):
+                                for sent_id, sent in enumerate(doc.sents):
+                                    ents = list(sent.ents)
+                                    for ent in ents:
+                                        # entity name|type|doc id (row num in metadata.csv)|paragraph id|sent id|offset start|offset end
+                                        data_list = [ent.text, ent.label_, str(row_num), str(par_id), str(sent_id), 
+                                                        str(ent.start_char-ent.sent.start_char), 
+                                                        str(ent.end_char-ent.sent.start_char)]
+                                        data_str = "|".join(data_list) + "\n"
+                                        f_out.write(data_str)
+                            print("Building output took %s seconds --" % (time.time() - output_start))
+                            articles.clear()
+
 
             
 
