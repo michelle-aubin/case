@@ -40,7 +40,7 @@ def main(start, end):
                         for entry in data.get("body_text"):
                             texts.append(entry.get("text"))
                         pipe_start = time.time()
-                        docs = list(nlp.pipe(texts))
+                        docs = list(nlp.pipe(texts, batch_size=4))
                         print("NLP pipe took %s seconds --" % (time.time() - pipe_start))
                         output_start = time.time()
                         for doc in docs:
