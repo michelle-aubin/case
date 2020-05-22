@@ -233,6 +233,8 @@
 {"label": "DAILY_OR_RECREATIONAL_ACTIVITY", "pattern": [{"LOWER": "reads"}]}
 {"label": "LABORATORY_PROCEDURE", "pattern": [{"LOWER": "enrichment"}]}
 {"label": "RESEARCH_ACTIVITY", "pattern": [{"LOWER": "first"}, {"LOWER": "strand"}]}
+{"label": "CORONAVIRUS", "pattern": [{"LOWER": "sars-cov-2"}]}
+{"label": "CORONAVIRUS", "pattern": [{"LOWER": "covid-19"}]}
 {"label": "RESEARCH_ACTIVITY", "pattern": [{"LOWER": "validation"}]}
 {"label": "EVOLUTION", "pattern": [{"LOWER": "common"}, {"LOWER": "ancestors"}]}
 {"label": "MOLECULAR_FUNCTION", "pattern": [{"LOWER": "macromolecule"}, {"LOWER": "metabolic"}, {"LOWER": "process"}]}
