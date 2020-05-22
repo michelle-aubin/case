@@ -13,7 +13,7 @@ URL = "https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/latest/"
 )
 def main(start, end):
     model_time = time.time()
-    nlp = spacy.load("custom_model3", disable=["tagger"])
+    nlp = spacy.load("custom_model3" , disable=["tagger"])
     print("Loading model took %s seconds --" % (time.time() - model_time))
     out_file = "test" + str(start) + "-" + str(end) +".txt"
     with open("metadata.csv", "r", encoding="utf-8") as f_meta:
@@ -39,8 +39,10 @@ def main(start, end):
                         texts = [entry.get("text") for entry in data.get("abstract")]
                         for entry in data.get("body_text"):
                             texts.append(entry.get("text"))
+                        full = "|!|".join(texts)
+                        full_texts = [full for i in range(60)]
                         pipe_start = time.time()
-                        docs = list(nlp.pipe(texts))
+                        docs = list(nlp.pipe(full_texts, batch_size=20))
                         print("NLP pipe took %s seconds --" % (time.time() - pipe_start))
                         output_start = time.time()
                         for doc in docs:
