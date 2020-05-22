@@ -21,13 +21,6 @@ def main():
     for label in labels:
         nlp.vocab.strings.add(label)
 
-    # text = """
-    # A person has Down syndrome. The body produces precipitation. During the study period, respiratory specimens (sputum, nasopharyngeal aspiration, endotracheal secretion, and bronchoalveolar lavage) for M. pneumoniae culture were obtained from patients with upper or lower respiratory tract infections seen as inpatients or in the outpatient or emergency departments. Respiratory specimens were aslo Gram-stained and cultured for bacteria and viruses. M. pneumoniae serological tests for IgG or IgM were not available at KAUH during the study period. All positive culture results were obtained from the Microbiology laboratory records. Charts of patients were reviewed with standardized data collection. Information collected included patients' demographics, comorbidities, clinical manifestations, complications, and outcome.
-    #    """
-    # doc = nlp(text)
-
-    # for ent in doc.ents:
-    #     print(ent.text, ent.label_)
 
     # save model to disk
     nlp.to_disk("custom_model3/")
