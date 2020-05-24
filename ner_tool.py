@@ -44,20 +44,19 @@ def main(start, end, batch_size):
                             texts.append(entry.get("text"))
                         full = " ".join(texts)
                         # do batches of documents
-                        articles.append(full)
+                        articles.append((full, row.get("cord_uid")))
                         if row_num != 0 and (row_num + 1) % batch_size == 0:
                             pipe_start = time.time()
-                            docs = list(nlp.pipe(articles))
+                            docs = list(nlp.pipe(articles, as_tuples=True))
                             print("NLP pipe took %s seconds --" % (time.time() - pipe_start))
                             output_start = time.time()
-                            for ind, doc in enumerate(docs):
-                                doc_id = ind + (row_num + 1) - batch_size
-                                print("Doc %d" % doc_id)
+                            for doc, doc_id in docs:
+                                print("Doc %s" % doc_id)
                                 for sent_id, sent in enumerate(doc.sents):
                                     ents = list(sent.ents)
                                     for ent in ents:
                                         # entity name|type|doc id (row num in metadata.csv)|sent id|offset start|offset end
-                                        data_list = [ent.text, ent.label_, str(doc_id), str(sent_id), 
+                                        data_list = [ent.text, ent.label_, doc_id, str(sent_id), 
                                                         str(ent.start_char-ent.sent.start_char), 
                                                         str(ent.end_char-ent.sent.start_char)]
                                         data_str = "|".join(data_list) + "\n"
