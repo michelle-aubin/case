@@ -6,7 +6,6 @@ import plac
 import numpy as np
 
 URL = "https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/latest/"
-batch_size = 50
 
 
 @plac.annotations(
@@ -37,11 +36,14 @@ def main(start, end, batch_size):
                         json_start = time.time()
                         data = json.loads(url.read().decode())
                         print("JSON load took %s seconds --" % (time.time() - json_start))
-                        texts = [entry.get("text") for entry in data.get("abstract")]
+                        if data.get("abstract"):
+                            texts = [entry.get("text") for entry in data.get("abstract")]
+                        else:
+                            texts = []
                         for entry in data.get("body_text"):
                             texts.append(entry.get("text"))
                         full = " ".join(texts)
-                        # do batches of 10 docs
+                        # do batches of documents
                         articles.append(full)
                         if row_num != 0 and (row_num + 1) % batch_size == 0:
                             pipe_start = time.time()
