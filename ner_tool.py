@@ -71,13 +71,7 @@ def main(start, end, batch_size):
                                     data_str = "|".join(data_list) + "\n"
                                     f_out.write(data_str)
                         print("Building output took %s seconds --" % (time.time() - output_start))
-                        articles.clear()
-
-
-            
-
-                # paragraph id is entry is index in list of "text" entries in abstract and body
-                # ex abstract: [0,1,2], body_text: [3,4,5]     
+                        articles.clear() 
 
 if __name__ == "__main__":
     start_time = time.time()
