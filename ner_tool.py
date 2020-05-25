@@ -75,7 +75,7 @@ def main(start, end, batch_size, num_p):
                 urls = pmc_url.split("; ")
             if urls:
                 read_url(urls[0], row.get("cord_uid"), articles)
-    print("Reading documents took %s seconds" % (time.time() - model_time))
+    print("Read %d documents in %s seconds" % (len(articles) ,time.time() - model_time))
     print("Processing documents...")
     # do ner and write to file
     process(nlp, articles, out_file, batch_size, num_p)
