@@ -46,7 +46,7 @@ def build_output(doc, doc_id, f_out):
    start=("Doc ID to start on.", "positional", None, int),
    end=("Doc ID to end on (included in NER results).", "positional", None, int),
    batch_size=("Number of docs to run through pipeline at once", "positional", None, int),
-   num_p=("Number of processes to use", None, int)
+   num_p=("Number of processes to use", "positional", None, int)
 )
 def main(start, end, batch_size, num_p):
     model_time = time.time()
