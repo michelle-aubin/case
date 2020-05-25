@@ -55,7 +55,7 @@ def main(start, end, batch_size, num_p):
     print("Loading model took %s seconds" % (time.time() - model_time))
     out_file = "ner-results/" + "ner" + str(start) + "-" + str(end) +".txt"
     # get data
-    with open("metadata.csv", "r", encoding="utf-8") as f_meta:
+    with open("clean_metadata.csv", "r", encoding="utf-8") as f_meta:
         articles = []
         metadata = csv.DictReader(f_meta)
         count = 0
@@ -66,15 +66,7 @@ def main(start, end, batch_size, num_p):
                 continue
             elif row_num > end:
                 break
-            urls = []
-            pdf_url = row.get("pdf_json_files")
-            pmc_url = row.get("pmc_json_files")
-            if pdf_url:
-                urls = pdf_url.split("; ")
-            elif pmc_url:
-                urls = pmc_url.split("; ")
-            if urls:
-                read_url(urls[0], row.get("cord_uid"), articles)
+            read_url(row.get("json_file"), row.get("cord_uid"), articles)
     print("Reading %d documents took %s seconds" % (len(articles), time.time() - read_time))
     print("Processing documents...")
     # do ner and write to file
