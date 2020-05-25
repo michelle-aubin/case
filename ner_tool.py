@@ -22,9 +22,9 @@ def read_url(url_str, cord_uid, articles):
         full = " ".join(texts)
         articles.append((full, cord_uid))
 
-def process(nlp, texts, f, size):
+def process(nlp, texts, f, size, num_p):
     with open(f, "w", encoding="utf-8") as f_out:
-        for doc, doc_id in nlp.pipe(texts, as_tuples=True, n_process=4, batch_size=size):
+        for doc, doc_id in nlp.pipe(texts, as_tuples=True, n_process=num_p, batch_size=size):
             build_output(doc, doc_id, f_out)
 #    articles.clear()
 
@@ -45,9 +45,10 @@ def build_output(doc, doc_id, f_out):
 @plac.annotations(
    start=("Doc ID to start on.", "positional", None, int),
    end=("Doc ID to end on (included in NER results).", "positional", None, int),
-   batch_size=("Number of docs to run through pipeline at once", "positional", None, int)
+   batch_size=("Number of docs to run through pipeline at once", "positional", None, int),
+   num_p=("Number of processes to use", None, int)
 )
-def main(start, end, batch_size):
+def main(start, end, batch_size, num_p):
     model_time = time.time()
     nlp = spacy.load("custom_model3")
     print("Loading model took %s seconds --" % (time.time() - model_time))
@@ -72,7 +73,7 @@ def main(start, end, batch_size):
             if urls:
                 read_url(urls[0], row.get("cord_uid"), articles)
     # do ner and write to file
-    process(nlp, articles, out_file, batch_size)
+    process(nlp, articles, out_file, batch_size, num_p)
 
 
 
