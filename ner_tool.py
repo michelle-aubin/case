@@ -26,10 +26,9 @@ def read_url(url_str, cord_uid, articles):
         full = " ".join(texts)
         articles.append((full, cord_uid))
 
-def process(nlp, batch_id, texts, f):
-    print("Processing batch", batch_id)
+def process(nlp, texts, f):
     with open(f, "w", encoding="utf-8") as f_out:
-        for doc, doc_id in nlp.pipe(texts, as_tuples=True):
+        for doc, doc_id in nlp.pipe(texts, as_tuples=True, n_process=4, batch_size=10):
             build_output(doc, doc_id, f_out)
 #    articles.clear()
 
@@ -81,11 +80,8 @@ def main(start, end, batch_size):
                 #     print("NLP pipe took %s seconds --" % (time.time() - pipe_start))
                 #     build_output(docs, articles, out_file)
  #   print("Read %d documents" % len(articles))
-    partitions = minibatch(articles, size=10)
-    executor = Parallel(n_jobs=4, backend="multiprocessing", prefer="processes") 
-    do = delayed(partial(process, nlp))
-    tasks = (do(i, batch, out_file) for i, batch in enumerate(partitions))
-    executor(tasks)
+    process(nlp, articles, out_file)
+
 
 
 if __name__ == "__main__":
