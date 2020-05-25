@@ -26,9 +26,9 @@ def read_url(url_str, cord_uid, articles):
         full = " ".join(texts)
         articles.append((full, cord_uid))
 
-def process(nlp, texts, f):
+def process(nlp, texts, f, size):
     with open(f, "w", encoding="utf-8") as f_out:
-        for doc, doc_id in nlp.pipe(texts, as_tuples=True, n_process=4, batch_size=10):
+        for doc, doc_id in nlp.pipe(texts, as_tuples=True, n_process=4, batch_size=size):
             build_output(doc, doc_id, f_out)
 #    articles.clear()
 
@@ -56,6 +56,7 @@ def main(start, end, batch_size):
     nlp = spacy.load("custom_model3")
     print("Loading model took %s seconds --" % (time.time() - model_time))
     out_file = "test-results/" + "test" + str(start) + "-" + str(end) +".txt"
+    # get data
     with open("metadata.csv", "r", encoding="utf-8") as f_meta:
         articles = []
         metadata = csv.DictReader(f_meta)
@@ -80,7 +81,8 @@ def main(start, end, batch_size):
                 #     print("NLP pipe took %s seconds --" % (time.time() - pipe_start))
                 #     build_output(docs, articles, out_file)
  #   print("Read %d documents" % len(articles))
-    process(nlp, articles, out_file)
+    # do ner and write to file
+    process(nlp, articles, out_file, batch_size)
 
 
 
