@@ -30,7 +30,7 @@ def process(nlp, texts, f, size, num_p):
 
 def build_output(doc, doc_id, f_out):
   #  output_start = time.time()
-    print("Doc %s" % doc_id)
+    print("Writing output for Doc %s" % doc_id)
     for sent_id, sent in enumerate(doc.sents):
         ents = list(sent.ents)
         for ent in ents:
@@ -58,6 +58,7 @@ def main(start, end, batch_size, num_p):
         articles = []
         metadata = csv.DictReader(f_meta)
         count = 0
+        print("Reading documents...")
         for row_num, row in enumerate(metadata):
             if row_num < start:
                 continue
@@ -72,6 +73,7 @@ def main(start, end, batch_size, num_p):
                 urls = pmc_url.split("; ")
             if urls:
                 read_url(urls[0], row.get("cord_uid"), articles)
+    print("Processing documents...")
     # do ner and write to file
     process(nlp, articles, out_file, batch_size, num_p)
 
