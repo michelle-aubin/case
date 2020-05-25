@@ -4,12 +4,8 @@ import spacy
 import time
 import plac
 import numpy as np
-from joblib import Parallel, delayed
-from functools import partial
-from spacy.util import minibatch
 
 URL = "https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/latest/"
-
 
 
 def read_url(url_str, cord_uid, articles):
@@ -75,12 +71,6 @@ def main(start, end, batch_size):
                 urls = pmc_url.split("; ")
             if urls:
                 read_url(urls[0], row.get("cord_uid"), articles)
-                # if len(articles) == batch_size:
-                #     pipe_start = time.time()
-                #     docs = list(nlp.pipe(articles, as_tuples=True))
-                #     print("NLP pipe took %s seconds --" % (time.time() - pipe_start))
-                #     build_output(docs, articles, out_file)
- #   print("Read %d documents" % len(articles))
     # do ner and write to file
     process(nlp, articles, out_file, batch_size)
 
