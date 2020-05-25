@@ -51,7 +51,7 @@ def build_output(doc, doc_id, f_out):
 def main(start, end, batch_size, num_p):
     print("Loading model...")
     model_time = time.time()
-    nlp = spacy.load("custom_model3")
+    nlp = spacy.load("custom_model3", disable=["tagger"])
     print("Loading model took %s seconds" % (time.time() - model_time))
     out_file = "test-results/" + "test" + str(start) + "-" + str(end) +".txt"
     # get data
@@ -75,7 +75,7 @@ def main(start, end, batch_size, num_p):
                 urls = pmc_url.split("; ")
             if urls:
                 read_url(urls[0], row.get("cord_uid"), articles)
-    print("Read %d documents in %s seconds" % (len(articles) ,time.time() - model_time))
+    print("Reading documents took %s seconds" % (time.time() - read_time))
     print("Processing documents...")
     # do ner and write to file
     process(nlp, articles, out_file, batch_size, num_p)
