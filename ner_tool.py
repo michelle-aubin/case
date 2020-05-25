@@ -53,7 +53,7 @@ def main(start, end, batch_size, num_p):
     model_time = time.time()
     nlp = spacy.load("custom_model3", disable=["tagger"])
     print("Loading model took %s seconds" % (time.time() - model_time))
-    out_file = "test-results/" + "test" + str(start) + "-" + str(end) +".txt"
+    out_file = "ner-results/" + "ner" + str(start) + "-" + str(end) +".txt"
     # get data
     with open("metadata.csv", "r", encoding="utf-8") as f_meta:
         articles = []
