@@ -49,9 +49,10 @@ def build_output(doc, doc_id, f_out):
    num_p=("Number of processes to use", "positional", None, int)
 )
 def main(start, end, batch_size, num_p):
+    print("Loading model...")
     model_time = time.time()
     nlp = spacy.load("custom_model3")
-    print("Loading model took %s seconds --" % (time.time() - model_time))
+    print("Loading model took %s seconds" % (time.time() - model_time))
     out_file = "test-results/" + "test" + str(start) + "-" + str(end) +".txt"
     # get data
     with open("metadata.csv", "r", encoding="utf-8") as f_meta:
@@ -59,6 +60,7 @@ def main(start, end, batch_size, num_p):
         metadata = csv.DictReader(f_meta)
         count = 0
         print("Reading documents...")
+        read_time = time.time()
         for row_num, row in enumerate(metadata):
             if row_num < start:
                 continue
@@ -73,6 +75,7 @@ def main(start, end, batch_size, num_p):
                 urls = pmc_url.split("; ")
             if urls:
                 read_url(urls[0], row.get("cord_uid"), articles)
+    print("Reading documents took %s seconds" % (time.time() - model_time))
     print("Processing documents...")
     # do ner and write to file
     process(nlp, articles, out_file, batch_size, num_p)
