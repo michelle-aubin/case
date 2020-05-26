@@ -1,6 +1,7 @@
 #!/bin/bash
 #SBATCH --time=16:00:00
-#SBATCH --ntasks-per-node=48
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=48
 #SBATCH --mem-per-cpu=10G
 module load python/3.7
 virtualenv --no-download $SLURM_TMPDIR/env1
