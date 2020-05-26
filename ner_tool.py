@@ -7,6 +7,7 @@ import numpy as np
 from joblib import Parallel, delayed
 from functools import partial
 from spacy.util import minibatch
+from pathlib import Path
 
 URL = "https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/latest/"
 
@@ -28,11 +29,15 @@ def read_url(url_str, cord_uid, articles):
 
 def process(nlp, batch_id, texts, f):
     print("Processing batch", batch_id)
+    proc_time = time.time()
     f_batch = f + "-" + str(batch_id) + ".txt"
+    f_batch_path = Path(f_batch)
+    if f_batch_path.exists():
+        return None
     with open(f_batch, "w", encoding="utf-8") as f_out:
         for doc, doc_id in nlp.pipe(texts, as_tuples=True):
             build_output(doc, doc_id, f_out)
-#    articles.clear()
+    print("Processing batch %d took %s seconds" % (batch_id, time.time()-proc_time))
 
 def build_output(doc, doc_id, f_out):
   #  output_start = time.time()
@@ -50,9 +55,10 @@ def build_output(doc, doc_id, f_out):
 @plac.annotations(
    start=("Doc ID to start on.", "positional", None, int),
    end=("Doc ID to end on (included in NER results).", "positional", None, int),
-   batch_size=("Number of docs to run through pipeline at once", "positional", None, int)
+   batch_size=("Number of docs to run through pipeline at once", "positional", None, int),
+   num_p=("Number of processes to use", "positional", None, int)   
 )
-def main(start, end, batch_size):
+def main(start, end, batch_size, num_p):
     print("Loading model...")
     model_time = time.time()
     nlp = spacy.load("custom_model3")
@@ -70,8 +76,8 @@ def main(start, end, batch_size):
                 break
             read_url(row.get("json_file"), row.get("cord_uid"), articles)
     print("Reading %d documents took %s seconds" % (len(articles), time.time() - read_time))
-    partitions = minibatch(articles, size=20)
-    executor = Parallel(n_jobs=4, backend="multiprocessing", prefer="processes") 
+    partitions = minibatch(articles, size=batch_size)
+    executor = Parallel(n_jobs=num_p, backend="multiprocessing", prefer="processes") 
     do = delayed(partial(process, nlp))
     tasks = (do(i, batch, out_file) for i, batch in enumerate(partitions))
     executor(tasks)
