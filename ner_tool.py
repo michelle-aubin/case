@@ -23,8 +23,8 @@ def read_url(url_str, cord_uid, articles):
         articles.append((full, cord_uid))
 
 def process(nlp, texts, f, size, num_p):
-        for doc, doc_id in nlp.pipe(texts, as_tuples=True, n_process=num_p, batch_size=size):
-            build_output(doc, doc_id, f)
+    for doc, doc_id in nlp.pipe(texts, as_tuples=True, n_process=num_p, batch_size=size):
+        build_output(doc, doc_id, f)
 
 def build_output(doc, doc_id, f):
   #  output_start = time.time()
