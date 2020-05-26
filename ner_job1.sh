@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH --time=06:00:00
-#SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=32
-#SBATCH --mem=20G
+#SBATCH --time=02:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=48
+#SBATCH --mem=0
 module load python/3.7
-virtualenv --no-download $SLURM_TMPDIR/env1
+virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
 pip install --no-index --upgrade pip
 
