@@ -29,7 +29,7 @@ def process(nlp, texts, f, size, num_p):
 def build_output(doc, doc_id, f):
   #  output_start = time.time()
     with open(f, "a", encoding="utf-8") as f_out:
-        print("%s" % doc_id)
+    #    print("%s" % doc_id)
         for sent_id, sent in enumerate(doc.sents):
             ents = list(sent.ents)
             for ent in ents:
@@ -70,14 +70,18 @@ def main(start, end, batch_size, num_p):
             if len(articles) == 200:
                 print("Reading %d documents took %s seconds" % (len(articles), time.time() - read_time))
                 print("Processing documents...")
+                nlp_time = time.time()
                 # do ner and write to file
                 process(nlp, articles, out_file, batch_size, num_p)
+                print("Processing documents took %s seconds" % (time.time() - nlp_time))
                 articles.clear()
                 read_time = time.time()
         if len(articles) > 0:
             print("Reading %d documents took %s seconds" % (len(articles), time.time() - read_time))
             print("Processing documents...")
+            nlp_time = time.time()
             process(nlp, articles, out_file, batch_size, num_p)
+            print("Processing documents took %s seconds" % (time.time() - nlp_time))
 
 
 
