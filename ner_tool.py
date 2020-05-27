@@ -63,7 +63,10 @@ def main(start, end, batch_size, num_p):
     model_time = time.time()
     nlp = spacy.load("custom_model3")
     print("Loading model took %s seconds --" % (time.time() - model_time))
-    out_file = "ner-results/" + "ner" + str(start) + "-" + str(end) + "/"
+    out_dir = "ner-results/" + "ner" + str(start) + "-" + str(end) + "/"
+    f_out_path = Path(out_dir)
+    if not f_out_path.exists():
+        f_out_path.mkdir(parents=True)
     print("Reading documents...")
     read_time = time.time()
     with open("clean_metadata.csv", "r", encoding="utf-8") as f_meta:
@@ -79,7 +82,7 @@ def main(start, end, batch_size, num_p):
     partitions = minibatch(articles, size=batch_size)
     executor = Parallel(n_jobs=num_p, backend="multiprocessing", prefer="processes") 
     do = delayed(partial(process, nlp))
-    tasks = (do(i, batch, out_file) for i, batch in enumerate(partitions))
+    tasks = (do(i, batch, out_dir) for i, batch in enumerate(partitions))
     executor(tasks)
 
 
