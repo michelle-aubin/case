@@ -9,3 +9,5 @@ source $SLURM_TMPDIR/env/bin/activate
 pip install --no-index --upgrade pip
 pip install --no-index -r requirements.txt
 python get_sentences.py 40000 58422 10 47
+cd sentences/
+tar -cvzf sent40000-58422.tar.gz sent40000-58422/
