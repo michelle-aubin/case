@@ -30,7 +30,7 @@ def read_url(url_str, cord_uid, articles):
 def process(nlp, batch_id, texts, f):
     print("Processing batch", batch_id)
     proc_time = time.time()
-    f_batch = f + "-" + str(batch_id) + ".txt"
+    f_batch = f + "batch" + str(batch_id) + ".txt"
     f_batch_path = Path(f_batch)
     if f_batch_path.exists():
         return None
@@ -63,7 +63,7 @@ def main(start, end, batch_size, num_p):
     model_time = time.time()
     nlp = spacy.load("custom_model3")
     print("Loading model took %s seconds --" % (time.time() - model_time))
-    out_file = "ner-results/" + "ner" + str(start) + "-" + str(end)
+    out_file = "ner-results/" + "ner" + str(start) + "-" + str(end) + "/"
     print("Reading documents...")
     read_time = time.time()
     with open("clean_metadata.csv", "r", encoding="utf-8") as f_meta:
