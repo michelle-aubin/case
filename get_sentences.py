@@ -1,17 +1,14 @@
-import csv
 import urllib.request, json 
 import spacy
+import csv
 import time
 import plac
-import numpy as np
 from joblib import Parallel, delayed
 from functools import partial
 from spacy.util import minibatch
 from pathlib import Path
 
 URL = "https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/latest/"
-
-
 
 def read_url(url_str, cord_uid, articles):
  #   url_start = time.time()
@@ -40,30 +37,26 @@ def process(nlp, batch_id, texts, f):
     print("Processing batch %d took %s seconds" % (batch_id, time.time()-proc_time))
 
 def build_output(doc, doc_id, f_out):
-  #  output_start = time.time()
     for sent_id, sent in enumerate(doc.sents):
-        ents = list(sent.ents)
-        for ent in ents:
-            # entity name|type|doc id (row num in metadata.csv)|sent id|offset start|offset end
-            data_list = [ent.text, ent.label_, doc_id, str(sent_id), 
-                            str(ent.start_char-ent.sent.start_char), 
-                            str(ent.end_char-ent.sent.start_char)]
+            # doc id|sentence id|sentence
+            data_list = [doc_id, str(sent_id), sent.text]
             data_str = "|".join(data_list) + "\n"
             f_out.write(data_str)
- #   print("Building output took %s seconds --" % (time.time() - output_start))
+
 
 @plac.annotations(
    start=("Doc ID to start on.", "positional", None, int),
-   end=("Doc ID to end on (included in NER results).", "positional", None, int),
+   end=("Doc ID to end on (included in results).", "positional", None, int),
    batch_size=("Number of docs to run through pipeline at once", "positional", None, int),
    num_p=("Number of processes to use", "positional", None, int)   
 )
 def main(start, end, batch_size, num_p):
     print("Loading model...")
     model_time = time.time()
-    nlp = spacy.load("custom_model3")
-    print("Loading model took %s seconds --" % (time.time() - model_time))
-    out_dir = "ner-results/" + "ner" + str(start) + "-" + str(end) + "/"
+    nlp = spacy.load("custom_model3", disable=["tagger", "web_ner", "bc5cdr_ner", 
+                                                "bionlp13cg_ner", "entity_ruler"])
+    # make sentences directory if it doesn't exist
+    out_dir = "sentences/" + "sent" + str(start) + "-" + str(end) + "/"
     f_out_path = Path(out_dir)
     if not f_out_path.exists():
         f_out_path.mkdir(parents=True)
@@ -84,7 +77,6 @@ def main(start, end, batch_size, num_p):
     do = delayed(partial(process, nlp))
     tasks = (do(i, batch, out_dir) for i, batch in enumerate(partitions))
     executor(tasks)
-
 
 if __name__ == "__main__":
     start_time = time.time()
