@@ -20,7 +20,7 @@ def read_url(url_str, cord_uid, articles):
         else:
             texts = []
         for entry in data.get("body_text"):
-            texts.append(entry.get("text"))
+            texts.append(entry.get("text").strip())
         full = " ".join(texts)
         articles.append((full, cord_uid))
 
@@ -52,7 +52,6 @@ def build_output(doc, doc_id, f_out):
 )
 def main(start, end, batch_size, num_p):
     print("Loading model...")
-    model_time = time.time()
     nlp = spacy.load("custom_model3", disable=["tagger", "web_ner", "bc5cdr_ner", 
                                                 "bionlp13cg_ner", "entity_ruler"])
     # make sentences directory if it doesn't exist
@@ -72,11 +71,12 @@ def main(start, end, batch_size, num_p):
                 break
             read_url(row.get("json_file"), row.get("cord_uid"), articles)
     print("Reading %d documents took %s seconds" % (len(articles), time.time() - read_time))
-    partitions = minibatch(articles, size=batch_size)
-    executor = Parallel(n_jobs=num_p, backend="multiprocessing", prefer="processes") 
-    do = delayed(partial(process, nlp))
-    tasks = (do(i, batch, out_dir) for i, batch in enumerate(partitions))
-    executor(tasks)
+    print(articles)
+    # partitions = minibatch(articles, size=batch_size)
+    # executor = Parallel(n_jobs=num_p, backend="multiprocessing", prefer="processes") 
+    # do = delayed(partial(process, nlp))
+    # tasks = (do(i, batch, out_dir) for i, batch in enumerate(partitions))
+    # executor(tasks)
 
 if __name__ == "__main__":
     start_time = time.time()
