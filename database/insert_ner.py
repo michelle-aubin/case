@@ -20,8 +20,8 @@ def main():
                    # print(entry)
                     try:
                         # entity|type|doc_id|sent_id|start|end
-                        values = (entry[0], entry[1], int(entry[2]), int(entry[3]), int(entry[4]), int(entry[5].strip('\n')))
-                        c.execute("insert into sentences values (?, ?, ?);", values)
+                        values = (entry[0], entry[1], entry[2], int(entry[3]), int(entry[4]), int(entry[5].strip('\n')))
+                        c.execute("insert into entities values (?, ?, ?, ?, ?, ?);", values)
                     except Exception as e:
                         print(e)
                         print("Bad line: ", entry)
