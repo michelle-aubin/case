@@ -31,7 +31,7 @@ def read_url(url_str, cord_uid, articles):
 
 
 def process(nlp, batch_id, texts, f_ent, f_sent):
-    print("Processing batch", batch_id)
+ #   print("Processing batch", batch_id)
     proc_time = time.time()
     ent_f_batch = f_ent + "batch" + str(batch_id) + ".txt"
     ent_f_batch_path = Path(ent_f_batch)
@@ -45,7 +45,7 @@ def process(nlp, batch_id, texts, f_ent, f_sent):
         with open(sent_f_batch, "w", encoding="utf-8") as sent_f_out:
             for doc, doc_id in nlp.pipe(texts, as_tuples=True):
                 build_output(doc, doc_id, ent_f_out, sent_f_out)
-    print("Processing batch %d took %s seconds" % (batch_id, time.time()-proc_time))
+  #  print("Processing batch %d took %s seconds" % (batch_id, time.time()-proc_time))
 
 # creates .txt files of rows for sentence table and entity table
 def build_output(doc, doc_id, ent_f_out, sent_f_out):
