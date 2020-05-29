@@ -8,6 +8,8 @@ virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
 pip install --no-index --upgrade pip
 pip install --no-index -r requirements.txt
-python get_sentences.py 30000 39999 10 47
+python ner_tool.py 30000 39999 10 47
 cd sentences/
 tar -cvzf sent30000-39999.tar.gz sent30000-39999/
+cd ../ner-results/
+tar -cvzf ner30000-39999.tar.gz ner30000-39999/
