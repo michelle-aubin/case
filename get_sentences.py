@@ -16,11 +16,11 @@ def read_url(url_str, cord_uid, articles):
      #   print("URL Request took %s seconds --" % (time.time() - url_start))
         data = json.loads(url.read().decode())
         if data.get("abstract"):
-            texts = [entry.get("text") for entry in data.get("abstract")]
+            texts = [entry.get("text").replace('\n', '') for entry in data.get("abstract")]
         else:
             texts = []
         for entry in data.get("body_text"):
-            texts.append(entry.get("text").strip())
+            texts.append(entry.get("text").replace('\n', ''))
         full = " ".join(texts)
         articles.append((full, cord_uid))
 

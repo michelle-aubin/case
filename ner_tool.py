@@ -19,37 +19,45 @@ def read_url(url_str, cord_uid, articles):
      #   print("URL Request took %s seconds --" % (time.time() - url_start))
         data = json.loads(url.read().decode())
         if data.get("abstract"):
-            texts = [entry.get("text") for entry in data.get("abstract")]
+            texts = [entry.get("text").replace('\n', '') for entry in data.get("abstract")]
         else:
             texts = []
         for entry in data.get("body_text"):
-            texts.append(entry.get("text"))
+            texts.append(entry.get("text").replace('\n', ''))
         full = " ".join(texts)
         articles.append((full, cord_uid))
 
-def process(nlp, batch_id, texts, f):
+def process(nlp, batch_id, texts, f_ent, f_sent):
     print("Processing batch", batch_id)
     proc_time = time.time()
-    f_batch = f + "batch" + str(batch_id) + ".txt"
-    f_batch_path = Path(f_batch)
-    if f_batch_path.exists():
+    ent_f_batch = f_ent + "batch" + str(batch_id) + ".txt"
+    ent_f_batch_path = Path(ent_f_batch)
+    if ent_f_batch_path.exists():
         return None
-    with open(f_batch, "w", encoding="utf-8") as f_out:
-        for doc, doc_id in nlp.pipe(texts, as_tuples=True):
-            build_output(doc, doc_id, f_out)
+    sent_f_batch = f_sent + "batch" + str(batch_id) + ".txt"
+    sent_f_batch_path = Path(sent_f_batch)
+    if sent_f_batch_path.exists():
+        return None
+    with open(ent_f_batch, "w", encoding="utf-8") as ent_f_out:
+        with open(sent_f_batch, "w", encoding="utf-8") as sent_f_out:
+            for doc, doc_id in nlp.pipe(texts, as_tuples=True):
+                build_output(doc, doc_id, ent_f_out, sent_f_out)
     print("Processing batch %d took %s seconds" % (batch_id, time.time()-proc_time))
 
-def build_output(doc, doc_id, f_out):
+def build_output(doc, doc_id, ent_f_out, sent_f_out):
   #  output_start = time.time()
     for sent_id, sent in enumerate(doc.sents):
+        data_list = [doc_id, str(sent_id), sent.text]
+        sent_data_str = "|".join(data_list) + "\n"
+        sent_f_out.write(sent_data_str)
         ents = list(sent.ents)
         for ent in ents:
-            # entity name|type|doc id (row num in metadata.csv)|sent id|offset start|offset end
+            # entity name|type|doc id|sent id|offset start|offset end
             data_list = [ent.text, ent.label_, doc_id, str(sent_id), 
                             str(ent.start_char-ent.sent.start_char), 
                             str(ent.end_char-ent.sent.start_char)]
             data_str = "|".join(data_list) + "\n"
-            f_out.write(data_str)
+            ent_f_out.write(data_str)
  #   print("Building output took %s seconds --" % (time.time() - output_start))
 
 @plac.annotations(
@@ -61,12 +69,18 @@ def build_output(doc, doc_id, f_out):
 def main(start, end, batch_size, num_p):
     print("Loading model...")
     model_time = time.time()
-    nlp = spacy.load("custom_model3")
+    nlp = spacy.load("custom_model3", disable=["tagger"])
     print("Loading model took %s seconds --" % (time.time() - model_time))
-    out_dir = "ner-results/" + "ner" + str(start) + "-" + str(end) + "/"
-    f_out_path = Path(out_dir)
-    if not f_out_path.exists():
-        f_out_path.mkdir(parents=True)
+    # make directories for ner-results and sentences
+    ent_out_dir = "ner-results/" + "ner" + str(start) + "-" + str(end) + "/"
+    ent_f_out_path = Path(ent_out_dir)
+    if not ent_f_out_path.exists():
+        ent_f_out_path.mkdir(parents=True)
+    sent_out_dir = "sentences/" + "sent" + str(start) + "-" + str(end) + "/"
+    sent_f_out_path = Path(sent_out_dir)
+    if not sent_f_out_path.exists():
+        sent_f_out_path.mkdir(parents=True)
+
     print("Reading documents...")
     read_time = time.time()
     with open("clean_metadata.csv", "r", encoding="utf-8") as f_meta:
@@ -82,7 +96,7 @@ def main(start, end, batch_size, num_p):
     partitions = minibatch(articles, size=batch_size)
     executor = Parallel(n_jobs=num_p, backend="multiprocessing", prefer="processes") 
     do = delayed(partial(process, nlp))
-    tasks = (do(i, batch, out_dir) for i, batch in enumerate(partitions))
+    tasks = (do(i, batch, ent_out_dir, sent_out_dir) for i, batch in enumerate(partitions))
     executor(tasks)
 
 
