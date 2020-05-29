@@ -14,16 +14,21 @@ URL = "https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/latest/"
 
 
 def read_url(url_str, cord_uid, articles):
-    with urllib.request.urlopen(URL + url_str) as url:
-        data = json.loads(url.read().decode())
-        if data.get("abstract"):
-            texts = [entry.get("text").replace('\n', '') for entry in data.get("abstract")]
-        else:
-            texts = []
-        for entry in data.get("body_text"):
-            texts.append(entry.get("text").replace('\n', ''))
-        full = " ".join(texts)
-        articles.append((full, cord_uid))
+    try:
+        with urllib.request.urlopen(URL + url_str) as url:
+            data = json.loads(url.read().decode())
+            if data.get("abstract"):
+                texts = [entry.get("text").replace('\n', '') for entry in data.get("abstract")]
+            else:
+                texts = []
+            for entry in data.get("body_text"):
+                texts.append(entry.get("text").replace('\n', ''))
+            full = " ".join(texts)
+            articles.append((full, cord_uid))
+    except Exception as e:
+        print("Could not read doc %s" % cord_uid)
+        return
+
 
 def process(nlp, batch_id, texts, f_ent, f_sent):
     print("Processing batch", batch_id)
