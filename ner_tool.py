@@ -14,9 +14,7 @@ URL = "https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/latest/"
 
 
 def read_url(url_str, cord_uid, articles):
- #   url_start = time.time()
     with urllib.request.urlopen(URL + url_str) as url:
-     #   print("URL Request took %s seconds --" % (time.time() - url_start))
         data = json.loads(url.read().decode())
         if data.get("abstract"):
             texts = [entry.get("text").replace('\n', '') for entry in data.get("abstract")]
@@ -44,9 +42,10 @@ def process(nlp, batch_id, texts, f_ent, f_sent):
                 build_output(doc, doc_id, ent_f_out, sent_f_out)
     print("Processing batch %d took %s seconds" % (batch_id, time.time()-proc_time))
 
+# creates .txt files of rows for sentence table and entity table
 def build_output(doc, doc_id, ent_f_out, sent_f_out):
-  #  output_start = time.time()
     for sent_id, sent in enumerate(doc.sents):
+        # doc id|sent id|sentence
         data_list = [doc_id, str(sent_id), sent.text]
         sent_data_str = "|".join(data_list) + "\n"
         sent_f_out.write(sent_data_str)
@@ -58,7 +57,6 @@ def build_output(doc, doc_id, ent_f_out, sent_f_out):
                             str(ent.end_char-ent.sent.start_char)]
             data_str = "|".join(data_list) + "\n"
             ent_f_out.write(data_str)
- #   print("Building output took %s seconds --" % (time.time() - output_start))
 
 @plac.annotations(
    start=("Doc ID to start on.", "positional", None, int),
