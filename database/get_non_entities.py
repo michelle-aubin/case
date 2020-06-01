@@ -10,13 +10,12 @@ def main():
     print("Loading model...")
     nlp = spacy.load("../custom_model3")
 
-    with open("non_entities.txt", "w") as f_out:
+    with open("non_entities.txt", "w", encoding="utf-8") as f_out:
         c.execute("SELECT * FROM sentences;")
         for row in c:
             doc_id = row[0]
             sent_id = row[1]
             text = row[2]
-            print(text)
             doc = nlp(text)
             for token in doc:
                 # only take non entities and non punctuation
