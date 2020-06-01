@@ -3,3 +3,4 @@ sentences/
 CORD-NER/
 old/data/
 database/cord19.db
+database/non_entities.txt
