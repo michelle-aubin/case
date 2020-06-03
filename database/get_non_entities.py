@@ -50,9 +50,9 @@ def build_output(doc, doc_id, f_out):
             # and take lowercase form
             if token.ent_iob == 2 and not token.is_punct:
                 # term|!|doc id|!|sent id|!|offset start|!|offset end
-                data_list = [token.lower_, doc_id, sent_id, 
-                            token.idx - sent.start_char,
-                            token.idx + len(token.lower_) - sent.start_char]
+                data_list = [token.lower_, doc_id, str(sent_id), 
+                            str(token.idx - sent.start_char),
+                            str(token.idx + len(token.lower_) - sent.start_char)]
                 data_str = "|!|".join(data_list) + "\n"
                 f_out.write(data_str)
 
