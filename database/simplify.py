@@ -6,3 +6,5 @@ def main():
             for line in f_in:
                 data = line.split("|!|")
                 f_out.write(data[0] + "|!|" + data[1] + "\n")
+
+main()
