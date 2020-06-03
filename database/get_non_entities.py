@@ -9,6 +9,8 @@ from functools import partial
 from spacy.util import minibatch
 from pathlib import Path
 
+import sqlite3
+
 URL = "https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/latest/"
 
 
@@ -26,13 +28,12 @@ def read_url(url_str, cord_uid, articles):
             full = " ".join(texts)
             articles.append((full, cord_uid))
     except Exception as e:
-        print("Could not read doc %s" % cord_uid)
-        return
+        print("Trying doc %s again" % cord_uid)
+        time.sleep(1)
+        read_url(url_str, cord_uid, articles)
 
 
 def process(nlp, batch_id, texts, f):
- #   print("Processing batch", batch_id)
-    proc_time = time.time()
     f_batch = f + "batch" + str(batch_id) + ".txt"
     f_batch_path = Path(f_batch)
     if f_batch_path.exists():
@@ -40,16 +41,20 @@ def process(nlp, batch_id, texts, f):
     with open(f_batch, "w", encoding="utf-8") as f_out:
         for doc, doc_id in nlp.pipe(texts, as_tuples=True):
             build_output(doc, doc_id, f_out)
-  #  print("Processing batch %d took %s seconds" % (batch_id, time.time()-proc_time))
 
 
 def build_output(doc, doc_id, f_out):
-    for token in doc:
-        # only take non entities and non punctuation
-        # and take lowercase form
-        if token.ent_iob == 2 and not token.is_punct:
-            output = token.lower_ + "|" + doc_id + "\n"
-            f_out.write(output)
+    for sent_id, sent in enumerate(doc.sents):
+        for token in sent:
+            # only take non entities and non punctuation
+            # and take lowercase form
+            if token.ent_iob == 2 and not token.is_punct:
+                # term|!|doc id|!|sent id|!|offset start|!|offset end
+                data_list = [token.lower_, doc_id, sent_id, 
+                            token.idx - sent.start_char,
+                            token.idx + len(token.lower_) - sent.start_char]
+                data_str = "|!|".join(data_list) + "\n"
+                f_out.write(data_str)
 
 
 @plac.annotations(
@@ -63,7 +68,7 @@ def main(start, end, batch_size, num_p):
     model_time = time.time()
     nlp = spacy.load("../custom_model3")
     print("Loading model took %s seconds --" % (time.time() - model_time))
-    # make directories for ner-results and sentences
+    # make directories for token results
     out_dir = "token-results/" + "token" + str(start) + "-" + str(end) + "/"
     out_path = Path(out_dir)
     if not out_path.exists():
@@ -102,18 +107,29 @@ if __name__ == "__main__":
 #     print("Loading model...")
 #     nlp = spacy.load("../custom_model3")
 
-#     with open("non_entities.txt", "w", encoding="utf-8") as f_out:
+#     missed = {"99dsndwd",
+#                 "d4inikrf",
+#                 "ucd9du6n",
+#                 "x05tfkgx",
+#                 "gjpgcimx",
+#                 "xtaakxe6",
+#                 "o3hibw1h",
+#                 "2esde0ds"}
+
+#     with open("missed_non_entities.txt", "w", encoding="utf-8") as f_out:
 #         c.execute("SELECT * FROM sentences;")
 #         for row in c:
 #             doc_id = row[0]
-#            # sent_id = row[1]
-#             text = row[2]
-#             doc = nlp(text)
-#             for token in doc:
-#                 # only take non entities and non punctuation
-#                 # and take lowercase form
-#                 if token.ent_iob == 2 and not token.is_punct:
-#                     output = token.lower_ + "|" + doc_id + "\n"
-#                     f_out.write(output)
+#             if doc_id in missed:
+#                 print("Got %s" % doc_id)
+#             # sent_id = row[1]
+#                 text = row[2]
+#                 doc = nlp(text)
+#                 for token in doc:
+#                     # only take non entities and non punctuation
+#                     # and take lowercase form
+#                     if token.ent_iob == 2 and not token.is_punct:
+#                         output = token.lower_ + "|" + doc_id + "\n"
+#                         f_out.write(output)
     
 # main()
