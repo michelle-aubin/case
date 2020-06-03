@@ -6,7 +6,7 @@ def main():
     print("Reading file...")
     with open("tokens.txt", "r", encoding="utf-8") as f_in:
         for line in f_in:
-            word = line.split("|")[0]
+            word = line.split("|!|")[0]
             # word doesn't have any alpha characters - dont include
             if not word.islower():
                 continue
