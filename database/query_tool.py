@@ -11,10 +11,15 @@ def main():
   #  nlp = spacy.load("../custom_model3")
     text = ""
 
-    c.execute("select * from sentences;")
-    for row in c:
-        print(row)
-        break
+    c.execute("""select count(distinct s.doc_id)
+              from entities s
+              ;""")
+    print(c.fetchall())
+
+
+    # for row in c:
+    #     print(row)
+    #     break
 
     # while text != "quit":
     #     text = input("Enter a question: ")

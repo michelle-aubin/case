@@ -15,8 +15,8 @@ def main():
             all_docs.add(row.get("cord_uid"))
     
     with open("missing_docs.txt", "w", encoding="utf-8") as f_out:
-        for doc in docs:
-            if doc not in all_docs:
+        for doc in all_docs:
+            if doc not in docs:
                 f_out.write(doc)
 
 main()
