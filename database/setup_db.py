@@ -7,6 +7,7 @@ def main():
     c.executescript("""
                     drop table if exists sentences;
                     drop table if exists entities;
+                    drop table if exists stop_words;
                     """)
 
     c.execute("PRAGMA foreign_keys = ON;")
@@ -29,6 +30,10 @@ def main():
                         primary key (doc_id,sent_id,start),
                         foreign key (doc_id,sent_id) references sentences
                     );
+                    create table stop_words (
+                            term      text,
+                            primary key (term)        
+                        );
                     """)
     conn.commit()
 
