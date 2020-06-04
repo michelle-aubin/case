@@ -3,6 +3,6 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=8
 #SBATCH --mem=10G
-cat missed_non_entities.txt non_entities.txt merged*.txt > tokens.txt
+cat merged*.txt > tokens.txt
 sort -u --parallel=8 -o tokens.txt tokens.txt 
 tar -cvzf tokens.tar.gz tokens.txt
