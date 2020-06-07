@@ -8,6 +8,7 @@ def main():
                     drop table if exists sentences;
                     drop table if exists entities;
                     drop table if exists stop_words;
+                    drop table if exists terms;
                     """)
 
     c.execute("PRAGMA foreign_keys = ON;")
@@ -34,6 +35,14 @@ def main():
                             term      text,
                             primary key (term)        
                         );
+                    create table terms (
+                        term      text,
+                        doc_id      char(8),
+                        sent_id     int,
+                        start       int,
+                        primary key (doc_id,sent_id,start),
+                        foreign key (doc_id,sent_id) references sentences
+                    );
                     """)
     conn.commit()
 
