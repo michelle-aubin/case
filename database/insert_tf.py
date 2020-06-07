@@ -5,6 +5,7 @@ import time
 def main():
     conn = sqlite3.connect("cord19.db")
     c = conn.cursor()
+    c2 = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")
     conn.commit()
     c.executescript("""
@@ -27,6 +28,6 @@ def main():
     print("Querying db took %s seconds", time.time() - start)
     for row in c:
         values = (row[0], row[1], row[2])
-        c.execute("insert into tf values (?, ?, ?);", values)
+        c2.execute("insert into tf values (?, ?, ?);", values)
     conn.commit()
 main()
