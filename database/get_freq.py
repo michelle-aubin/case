@@ -1,5 +1,6 @@
 from collections import defaultdict
 import math
+from constants import TOTAL_DOCS
 
 def main():
     with open("stopWords.txt", "r", encoding="utf-8") as f_in:
@@ -20,8 +21,12 @@ def main():
     print("Building output...")
     with open("idf.txt", "w", encoding="utf-8") as f_out:    
         for word, count in sorted(word_counts.items(), key=lambda item: item[1], reverse=True):
-            # idf is log(total num of docs / num of docs that term appears in)
-            idf = math.log(58419 / count, 10)
+            # idf is log( total num of docs - num of docs containing the term + 0.5
+            #           (----------------------------------------------------------)
+            #           (        num of docs containing the term + 0.5             )
+            top = TOTAL_DOCS - count + 0.5
+            bottom = count + 0.5
+            idf = math.log(top/bottom)
             f_out.write(word + "|!|" + str(idf) + "\n")
 
 
