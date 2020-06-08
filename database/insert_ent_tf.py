@@ -14,20 +14,21 @@ def main():
                     create table ent_tf (
                         entity        text,
                         doc_id      char(8),
-                        frequency   int,
+                        frequency   float,
                         primary key (entity, doc_id)
                     );
                     """)
     conn.commit()
 
     start = time.time()
-    c.execute(""" select entity, doc_id, count(*)
-                    from entities
-                    group by entity, doc_id
+    c.execute(""" select e.entity, e.doc_id, count(*), d.length
+                    from entities e, doc_lengths d
+                    where e.doc_id = d.doc_id
+                    group by e.entity, e.doc_id;
             """)
     print("Querying db took %s seconds", time.time() - start)
     for row in c:
-        values = (row[0], row[1], row[2])
+        values = (row[0], row[1], row[2] / row[3])
         c2.execute("insert into ent_tf values (?, ?, ?);", values)
     conn.commit()
 main()
