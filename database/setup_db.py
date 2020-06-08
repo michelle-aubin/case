@@ -56,7 +56,7 @@ def main():
                     create table tf (
                         term        text,
                         doc_id      char(8),
-                        frequency   int,
+                        frequency   float,
                         primary key (term, doc_id)
                     );
                     create table doc_lengths (
@@ -72,7 +72,7 @@ def main():
                     create table ent_tf (
                         entity        text,
                         doc_id      char(8),
-                        frequency   int,
+                        frequency   float,
                         primary key (entity, doc_id)
                     );
                     """)
