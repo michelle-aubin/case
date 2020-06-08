@@ -10,6 +10,7 @@ def main():
                     drop table if exists stop_words;
                     drop table if exists terms;
                     drop table if exists idf;
+                    drop table if exists tf;
                     drop table if exists doc_lengths;
                     drop table if exists ent_idf;
                     drop table if exists ent_tf;
@@ -51,6 +52,12 @@ def main():
                         term      text,
                         idf       double,
                         primary key (term)
+                    );
+                    create table tf (
+                        term        text,
+                        doc_id      char(8),
+                        frequency   int,
+                        primary key (term, doc_id)
                     );
                     create table doc_lengths (
                         doc_id      char(8),
