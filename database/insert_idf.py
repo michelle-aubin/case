@@ -8,6 +8,17 @@ def main():
     c.execute("PRAGMA foreign_keys = ON;")
     conn.commit()
 
+    c.executescript("""
+                    drop table if exists idf;
+                    create table idf (
+                        term      text,
+                        idf       double,
+                        primary key (term)
+                    );
+                    """)
+    conn.commit()
+
+
     with open("idf.txt", "r", encoding="utf-8") as f_in:
         for line in f_in:
             term, idf = line.split("|!|")
