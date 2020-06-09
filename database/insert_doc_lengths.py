@@ -32,7 +32,8 @@ def main():
     conn.commit()
 
     for doc_id, length in doc_lengths.items():
-        c.execute("insert into doc_lengths values (?, ?);", (doc_id, length))
+        if length != 0:
+            c.execute("insert into doc_lengths values (?, ?);", (doc_id, length))
     conn.commit()
 
 main()
