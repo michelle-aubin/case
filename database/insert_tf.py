@@ -21,13 +21,14 @@ def main():
     conn.commit()
 
     start = time.time()
-    c.execute(""" select term, doc_id, count(*)
-                    from terms
-                    group by term, doc_id
+    c.execute(""" select t.term, t.doc_id, count(*), d.length
+                    from terms t, doc_lengths d
+                    where t.doc_id = d.doc_id
+                    group by term, doc_id;
             """)
     print("Querying db took %s seconds", time.time() - start)
     for row in c:
-        values = (row[0], row[1], row[2])
+        values = (row[0], row[1], row[2] / row[3])
         c2.execute("insert into tf values (?, ?, ?);", values)
     conn.commit()
 main()
