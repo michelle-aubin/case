@@ -18,22 +18,28 @@ def get_score(doc_id, terms, entities):
 
     score = 0
     for term in terms:
+        # get idf of the term
         c.execute("select idf from idf where term = :term;", {"term": term})
         result = c.fetchone()
-        idf = result[0] if result else 0
+        idf = result[0] if result else get_idf(0)
+        # get tf of the term in the doc
         c.execute("select frequency from tf where term = :term and doc_id = :doc_id;", {"term": term, "doc_id":doc_id})
         result = c.fetchone()
         tf = result[0] if result else 0
+        # calculate score
         top = tf * (BM25_K1 + 1)
         bottom = tf + BM25_K1 * (1 - BM25_B + BM25_B * (doc_length / AVG_DOC_LENGTH))
         score += idf * (top / bottom)
     for ent in entities:
+        # get idf of the entity
         c.execute("select idf from ent_idf where entity = :entity;", {"entity": ent})
         result = c.fetchone()
-        idf = result[0] if result else 0
+        idf = result[0] if result else get_idf(0)
+        # get tf of the entity in the doc
         c.execute("select frequency from ent_tf where entity = :entity and doc_id = :doc_id;", {"entity": ent, "doc_id":doc_id})
         result = c.fetchone()
         tf = result[0] if result else 0
+        # calculate score
         top = tf * (BM25_K1 + 1)
         bottom = tf + BM25_K1 * (1 - BM25_B + BM25_B * (doc_length / AVG_DOC_LENGTH))
         score += idf * (top / bottom)
