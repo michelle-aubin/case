@@ -14,7 +14,7 @@ def main():
                     create table tf (
                         term        text,
                         doc_id      char(8),
-                        frequency   int,
+                        frequency   float,
                         primary key (term, doc_id)
                     );
                     """)
