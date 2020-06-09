@@ -24,7 +24,7 @@ def main():
     c.execute(""" select t.term, t.doc_id, count(*), d.length
                     from terms t, doc_lengths d
                     where t.doc_id = d.doc_id
-                    group by term, doc_id;
+                    group by t.term, t.doc_id;
             """)
     print("Querying db took %s seconds", time.time() - start)
     for row in c:
