@@ -32,7 +32,6 @@ def main():
                         doc_id      char(8),
                         sent_id     int,
                         start       int,
-                        end         int,
                         primary key (doc_id,sent_id,start),
                         foreign key (doc_id,sent_id) references sentences
                     );
@@ -41,7 +40,7 @@ def main():
                             primary key (term)        
                         );
                     create table terms (
-                        term      text,
+                        term        text,
                         doc_id      char(8),
                         sent_id     int,
                         start       int,
@@ -61,7 +60,7 @@ def main():
                     );
                     create table doc_lengths (
                         doc_id      char(8),
-                        length   int,
+                        length      int,
                         primary key (doc_id)
                     );
                     create table ent_idf (
