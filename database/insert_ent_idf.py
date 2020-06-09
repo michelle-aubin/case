@@ -1,4 +1,5 @@
 import sqlite3
+from bm25 import get_idf
 
 # ent_idf(entity, idf)
 def main():
@@ -24,7 +25,7 @@ def main():
         """)
 
     for row in c:
-        values = (row[0], row[1])
+        values = (row[0], get_idf(row[1]))
         c2.execute("insert into ent_idf values (?, ?);", values)
     conn.commit()
 main()
