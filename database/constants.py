@@ -1,5 +1,5 @@
 # total num of docs in the database
-TOTAL_DOCS = 58419
+TOTAL_DOCS = 58416
 
 # total num of rows in clean_metadata.csv
 METADATA_ROWS = 58422
