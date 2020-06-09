@@ -1,6 +1,6 @@
 from collections import defaultdict
 import math
-from constants import TOTAL_DOCS
+from bm25 import get_idf
 
 def main():
     with open("stopWords.txt", "r", encoding="utf-8") as f_in:
@@ -21,12 +21,7 @@ def main():
     print("Building output...")
     with open("idf.txt", "w", encoding="utf-8") as f_out:    
         for word, count in sorted(word_counts.items(), key=lambda item: item[1], reverse=True):
-            # idf is log( total num of docs - num of docs containing the term + 0.5
-            #           (----------------------------------------------------------)
-            #           (        num of docs containing the term + 0.5             )
-            top = TOTAL_DOCS - count + 0.5
-            bottom = count + 0.5
-            idf = math.log(top/bottom)
+            idf = get_idf(count)
             f_out.write(word + "|!|" + str(idf) + "\n")
 
 
