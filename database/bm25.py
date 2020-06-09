@@ -1,5 +1,6 @@
 import sqlite3
-from constants import AVG_DOC_LENGTH, BM25_B, BM25_K1
+import math
+from constants import AVG_DOC_LENGTH, BM25_B, BM25_K1, TOTAL_DOCS
 
 
 # Returns BM25 score of a document
@@ -39,4 +40,13 @@ def get_score(doc_id, terms, entities):
     
     return score
 
-
+# Calculates and returns idf given the number of docs containing a term
+# count: num of docs containing the term
+def get_idf(count):
+        # idf is log( total num of docs - num of docs containing the term + 0.5
+    #           (----------------------------------------------------------)
+    #           (        num of docs containing the term + 0.5             )
+    top = TOTAL_DOCS - count + 0.5
+    bottom = count + 0.5
+    idf = math.log(top/bottom)
+    return idf
