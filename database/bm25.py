@@ -27,9 +27,7 @@ def get_score(doc_id, terms, entities):
         result = c.fetchone()
         tf = result[0] if result else 0
         # calculate score
-        top = tf * (BM25_K1 + 1)
-        bottom = tf + BM25_K1 * (1 - BM25_B + BM25_B * (doc_length / AVG_DOC_LENGTH))
-        score += idf * (top / bottom)
+        score += calc_summand(tf, idf, doc_length)
     for ent in entities:
         # get idf of the entity
         c.execute("select idf from ent_idf where entity = :entity;", {"entity": ent})
@@ -40,16 +38,24 @@ def get_score(doc_id, terms, entities):
         result = c.fetchone()
         tf = result[0] if result else 0
         # calculate score
-        top = tf * (BM25_K1 + 1)
-        bottom = tf + BM25_K1 * (1 - BM25_B + BM25_B * (doc_length / AVG_DOC_LENGTH))
-        score += idf * (top / bottom)
+        score += calc_summand(tf, idf, doc_length)
     
     return score
+
+# Calculates and returns the summand for one query term of bm25 formula
+# tf: the term frequency of the term in the doc
+# idf: the inverse document frequency of the term
+# doc_length: the length of the doc in words
+def calc_summand(tf, idf, doc_length):
+    numerator = tf * (BM25_K1 + 1)
+    denominator = tf + BM25_K1 * (1 - BM25_B + BM25_B * (doc_length / AVG_DOC_LENGTH))
+    return idf * (numerator / denominator)
+
 
 # Calculates and returns idf given the number of docs containing a term
 # count: num of docs containing the term
 def get_idf(count):
-        # idf is log( total num of docs - num of docs containing the term + 0.5
+    # idf is log( total num of docs - num of docs containing the term + 0.5
     #           (----------------------------------------------------------)
     #           (        num of docs containing the term + 0.5             )
     top = TOTAL_DOCS - count + 0.5
