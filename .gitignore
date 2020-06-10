@@ -4,3 +4,12 @@ CORD-NER/
 old/data/
 database/cord19.db
 database/non_entities.txt
+.vscode/
+database/.open
+database/__pycache__/
+database/fix_sentences.py
+database/frequencies-percent.txt
+database/idf.txt
+database/sorted_tokens.txt
+database/tokens_for_db.txt
+weird_docs.txt
