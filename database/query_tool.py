@@ -37,7 +37,7 @@ def main():
             print("\t%s" % ent.text)
             entities.append(ent.text.lower())
 
-        print("Tokens found:")
+        print("Terms found:")
         for token in doc:
           # if token is a non entity and not a punct and not a stop word
           if token.ent_iob == 2 and not token.is_punct and token.text.lower() not in stop_words:
