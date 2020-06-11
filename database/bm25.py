@@ -67,10 +67,10 @@ def calc_summand(tf, idf, doc_length):
 # Calculates and returns idf given the number of docs containing a term
 # count: num of docs containing the term
 def get_idf(count):
-    # idf is log( total num of docs - num of docs containing the term + 0.5
-    #           (----------------------------------------------------------)
-    #           (        num of docs containing the term + 0.5             )
-    top = TOTAL_DOCS - count + 0.5
-    bottom = count + 0.5
+    # idf is log(           total num of docs + 1                    )
+    #           (----------------------------------------------------)
+    #           (        num of docs containing the term             )
+    top = TOTAL_DOCS + 1
+    bottom = count
     idf = math.log(top/bottom)
     return idf
