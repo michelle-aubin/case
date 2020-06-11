@@ -49,10 +49,12 @@ def main():
         start = time.time()
         # get docs that have all of the entities and tokens? or that have at least one? or just do all docs?
         doc_scores = {}
+        docs = {"t61k27lf", "3wq260lj", "qyiw18ft", "d3b5o5d9", "13xmmin1", "lad31adx"}
         with open("doc_ids.txt", "r", encoding="utf-8") as f_docs:
             for row in f_docs:
                 doc_id = row.strip()
-                doc_scores[doc_id] = get_score(doc_id, terms, entities)
+                if doc_id in docs:
+                    doc_scores[doc_id] = get_score(doc_id, terms, entities)
         print("Took %.2f seconds to get scores" % (time.time() - start))
         i = 0
         for doc, score in sorted(doc_scores.items(), key=lambda item: item[1], reverse=True):
@@ -60,9 +62,6 @@ def main():
                 break
             i += 1
             print("Doc ID: %s       Score: %.4f     Link: %s" % (doc, score, URL + urls[doc]))
-        # print("Scores of top docs from kaggle engine:")
-        # print("sasijnks", doc_scores["sasijnks"])
-        # print("sasijnks", doc_scores["itz0bdrc"])
         text = input("Enter a question: ")
 
 
