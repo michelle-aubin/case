@@ -7,6 +7,7 @@ METADATA_ROWS = 58422
 # parameters for BM25 ranking function
 BM25_B = 0.75
 BM25_K1 = 1.2
+BM25_delta = 1
 
 # average document length in words
 AVG_DOC_LENGTH = 4904
