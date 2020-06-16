@@ -1,11 +1,17 @@
 import sqlite3
 import spacy
-from bm25 import get_score
+from bm25 import get_score, print_get_score
 import time
 from constants import URL
 import csv
+import plac
 
-def main():
+
+@plac.annotations(
+   input_file=("Input text file of queries", "positional", None, str),
+   output_file=("Output file", "positional", None, str), 
+)
+def main(input_file, output_file):
     conn = sqlite3.connect("cord19.db")
     c = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")
@@ -17,54 +23,54 @@ def main():
         stop_words.add(row[0])
 
     # get links to json files of the docs
-    urls = {}
-    with open("../clean_metadata.csv", "r", encoding="utf-8") as f_meta:
-        metadata = csv.DictReader(f_meta)
-        for row in metadata:
-            urls[row.get("cord_uid")] = row.get("json_file")
+    # urls = {}
+    # with open("../clean_metadata.csv", "r", encoding="utf-8") as f_meta:
+    #     metadata = csv.DictReader(f_meta)
+    #     for row in metadata:
+    #         urls[row.get("cord_uid")] = row.get("json_file")
 
     print("Loading model...")
     nlp = spacy.load("../custom_model3")
-    text = ""
 
-    text = input("Enter a question: ")
-    while text != "quit":
-        terms = []
-        entities = []
-        doc = nlp(text)
-        print("Entities found:")
-        for ent in doc.ents:
-            print("\t%s" % ent.text)
-            entities.append(ent.text.lower())
 
-        print("Terms found:")
-        for token in doc:
-          # if token is a non entity and not a punct and not a stop word
-          if token.ent_iob == 2 and not token.is_punct and token.text.lower() not in stop_words:
-            print("\t%s" % token.text)
-            terms.append(token.text.lower())
-        # terms = ["antiviral", "treatment"]
+    with open(input_file, "r") as f_in:
+        for line in f_in:
+            terms = []
+            entities = []
+            doc = nlp(line.strip())
+            print("Entities found:")
+            for ent in doc.ents:
+                print("\t%s" % ent.text)
+                entities.append(ent.text.lower())
 
-        print("Getting scores...")
-        start = time.time()
-        # get docs that have all of the entities and tokens? or that have at least one? or just do all docs?
-        doc_scores = {}
-        docs = {"t61k27lf", "3wq260lj", "qyiw18ft", "d3b5o5d9", "13xmmin1", "lad31adx"}
-        with open("doc_ids.txt", "r", encoding="utf-8") as f_docs:
-            for row in f_docs:
-                doc_id = row.strip()
-                if doc_id in docs:
+            print("Terms found:")
+            for token in doc:
+                # if token is a non entity and not a punct and not a stop word
+                if token.ent_iob == 2 and not token.is_punct and token.text.lower() not in stop_words:
+                    print("\t%s" % token.text)
+                    terms.append(token.text.lower())
+
+            print("Getting scores...")
+            start = time.time()
+            # get docs that have all of the entities and tokens? or that have at least one? or just do all docs?
+            doc_scores = {}
+            with open("doc_ids.txt", "r", encoding="utf-8") as f_docs:
+                for row in f_docs:
+                    doc_id = row.strip()
                     doc_scores[doc_id] = get_score(doc_id, terms, entities)
-        print("Took %.2f seconds to get scores" % (time.time() - start))
-        i = 0
-        for doc, score in sorted(doc_scores.items(), key=lambda item: item[1], reverse=True):
-            if i > 5:
-                break
-            i += 1
-            print("Doc ID: %s       Score: %.4f     Link: %s" % (doc, score, URL + urls[doc]))
-        text = input("Enter a question: ")
+            print("Took %.2f seconds to get scores" % (time.time() - start))
+            i = 0
+            with open(output_file, "a") as f_out:
+                for doc, score in sorted(doc_scores.items(), key=lambda item: item[1], reverse=True):
+                    if i >= 5:
+                        f_out.write("\n")
+                        break
+                    i += 1
+                    f_out.write(doc + "\n")
 
 
 
-
-main()
+if __name__ == "__main__":
+    start_time = time.time()
+    plac.call(main)
+    print("-- %s seconds --" % (time.time() - start_time))
