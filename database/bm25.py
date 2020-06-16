@@ -15,41 +15,37 @@ def get_score(doc_id, terms, entities):
 
     c.execute("select length from doc_lengths where doc_id = :doc_id;", {"doc_id":doc_id})
     doc_length = c.fetchone()[0]
-#    print("For Doc %s:" % doc_id)
-#    print("\tLength: %d" % doc_length)
 
     score = 0
-#    print("\tScore: %f" % score)
+
     for term in terms:
-#        print("\tFor term \"%s\":" % term)
         # get idf of the term
         c.execute("select idf from idf where term = :term;", {"term": term})
         result = c.fetchone()
         idf = result[0] if result else get_idf(0)
-#        print("\t\tIDF: %f" % idf)
         # get tf of the term in the doc
         c.execute("select frequency from tf where term = :term and doc_id = :doc_id;", {"term": term, "doc_id":doc_id})
         result = c.fetchone()
         tf = result[0] if result else 0
-#        print("\t\tTF: %f" % tf)
+        # if term is not in doc return score of 0
+        if tf == 0:
+            return 0
         # calculate score
         score += calc_summand(tf, idf, doc_length)
-#        print("\tScore: %f" % score)
     for ent in entities:
-#        print("\tFor entity \"%s\":" % ent)
         # get idf of the entity
         c.execute("select idf from ent_idf where entity = :entity;", {"entity": ent})
         result = c.fetchone()
         idf = result[0] if result else get_idf(0)
-#        print("\t\tIDF: %f" % idf)
         # get tf of the entity in the doc
         c.execute("select frequency from ent_tf where entity = :entity and doc_id = :doc_id;", {"entity": ent, "doc_id":doc_id})
         result = c.fetchone()
         tf = result[0] if result else 0
-#        print("\t\tTF: %f" % tf)
+        # if term is not in doc return score of 0
+        if tf == 0:
+            return 0
         # calculate score
         score += calc_summand(tf, idf, doc_length)
-#        print("\tScore: %f" % score)
     
     return score
 
