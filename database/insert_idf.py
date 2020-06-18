@@ -1,10 +1,10 @@
 import sqlite3
-import math
-import time
+from bm25 import get_idf
 
 def main():
     conn = sqlite3.connect("cord19.db")
     c = conn.cursor()
+    c2 = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")
     conn.commit()
 
@@ -18,12 +18,14 @@ def main():
                     """)
     conn.commit()
 
+    c.execute(""" select term, count(distinct doc_id)
+            from terms
+            group by term
+    """)
 
-    with open("idf.txt", "r", encoding="utf-8") as f_in:
-        for line in f_in:
-            term, idf = line.split("|!|")
-            idf = float(idf.strip())
-            c.execute("insert into idf values (?, ?);", (term, idf))
+    for row in c:
+        values = (row[0], get_idf(row[1]))
+        c2.execute("insert into idf values (?, ?);", values)
     conn.commit()
 
 main()
