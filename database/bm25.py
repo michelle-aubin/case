@@ -69,7 +69,7 @@ def get_idf(count):
     #           (        num of docs containing the term             )
     numerator = TOTAL_DOCS + 1
     denominator = count
-    idf = math.log(numerator/denominator)
+    idf = math.log10(numerator/denominator)
     return idf
 
 
