@@ -13,11 +13,18 @@ def main():
                     drop table if exists ent_idf;
                     create table ent_idf (
                         entity      text,
-                        idf       double,
+                        idf       float,
+                        idf2      float,
                         primary key (entity)
                     );
                     """)
     conn.commit()
+
+    other_idfs = {}
+    with open("idf-ents-norm.txt", "r", encoding="utf-8") as f_in:
+        for line in f_in:
+            ent, idf = line.split("|!|")
+            other_idfs[ent] = float(idf)
 
     c.execute(""" select entity, count(distinct doc_id)
                 from entities
@@ -25,8 +32,13 @@ def main():
         """)
 
     for row in c:
-        values = (row[0], get_idf(row[1]))
-        c2.execute("insert into ent_idf values (?, ?);", values)
+        try:
+            other_idf = other_idfs[row[0]]
+        except KeyError:
+            other_idf = None
+        finally:
+            values = (row[0], get_idf(row[1]), other_idf)
+            c2.execute("insert into ent_idf values (?, ?, ?);", values)
     conn.commit()
 main()
 

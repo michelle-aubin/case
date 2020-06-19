@@ -49,7 +49,8 @@ def main():
                     );
                     create table idf (
                         term      text,
-                        idf       double,
+                        idf       float,
+                        idf2      float,
                         primary key (term)
                     );
                     create table tf (
@@ -65,7 +66,7 @@ def main():
                     );
                     create table ent_idf (
                         entity      text,
-                        idf       double,
+                        idf       float,
                         primary key (entity)
                     );
                     create table ent_tf (

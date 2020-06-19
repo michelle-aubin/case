@@ -12,11 +12,18 @@ def main():
                     drop table if exists idf;
                     create table idf (
                         term      text,
-                        idf       double,
+                        idf       float,
+                        idf2      float,
                         primary key (term)
                     );
                     """)
     conn.commit()
+
+    other_idfs = {}
+    with open("idf-terms-norm.txt", "r", encoding="utf-8") as f_in:
+        for line in f_in:
+            term, idf = line.split("|!|")
+            other_idfs[term] = float(idf)
 
     c.execute(""" select term, count(distinct doc_id)
             from terms
@@ -24,8 +31,13 @@ def main():
     """)
 
     for row in c:
-        values = (row[0], get_idf(row[1]))
-        c2.execute("insert into idf values (?, ?);", values)
+        try:
+            other_idf = other_idfs[row[0]]
+        except KeyError:
+            other_idf = None
+        finally:
+            values = (row[0], get_idf(row[1]), other_idf)
+            c2.execute("insert into idf values (?, ?, ?);", values)
     conn.commit()
 
 main()
