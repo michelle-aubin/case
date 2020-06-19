@@ -22,8 +22,6 @@ def get_score(doc_id, terms, entities):
         # get idf of the term
         c.execute("select idf, idf2 from idf where term = :term;", {"term": term})
         result = c.fetchone()
-        print("For term: ", term)
-        print("Result is: ", result)
         idf = result[0] if result else get_idf(0)
         # if idf2 is not null take min(idf,idf2)
         if result[1]:
@@ -41,8 +39,6 @@ def get_score(doc_id, terms, entities):
         # get idf of the entity
         c.execute("select idf, idf2 from ent_idf where entity = :entity;", {"entity": ent})
         result = c.fetchone()
-        print("For entity: ", ent)
-        print("Result is: ", result)
         idf = result[0] if result else get_idf(0)
         # if idf2 is not null take min(idf,idf2)
         if result[1]:
