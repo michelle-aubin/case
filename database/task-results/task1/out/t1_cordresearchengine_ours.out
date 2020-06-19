@@ -1,0 +1,118 @@
+Comparing task1\task1_results_cordresearchengine.txt and task1\task1_results_ours.txt
+
+Query:  Range of incubation periods across age and health status
+cordresearchengine   ours
+jknfhd7d       qcdlcxyb
+v24wsn04       it4ka7v0
+h89scli5       pckii4vh
+na42a0tr       8anqfkmo
+it4ka7v0       66ulqu11
+Intersection of result sets:  {'it4ka7v0'}
+
+Query:  Asymptomatic shedding and transmission in children
+cordresearchengine   ours
+1z702pxb       1z702pxb
+1qgaxcqq       0cu3syiw
+y8nfhnax       zv0rrvo0
+l3y2x5d0       74xl0a8o
+74xl0a8o       8homqmux
+Intersection of result sets:  {'1z702pxb', '74xl0a8o'}
+Doc 1z702pxb has rank 1 in both results
+
+Query:  Seasonality of transmission
+cordresearchengine   ours
+bh9yfmie       82plcxv9
+e666nvl3       bh9yfmie
+t7c0drft       t7c0drft
+vfagxsdz       03h85lvy
+zg17f7bd       1wkbjtji
+Intersection of result sets:  {'bh9yfmie', 't7c0drft'}
+Doc t7c0drft has rank 3 in both results
+
+Query:  Natural history and shedding of it from an infected person
+cordresearchengine   ours
+e0b8gnh8       e0b8gnh8
+ymsl7snv       414grqif
+414grqif       x46nvimq
+sepx3plb       jy63p793
+vxjyjql6       k69h9cc5
+Intersection of result sets:  {'414grqif', 'e0b8gnh8'}
+Doc e0b8gnh8 has rank 1 in both results
+
+Query:  Implementation of diagnostics and products to improve clinical processes
+cordresearchengine   ours
+urs5z4l1       urs5z4l1
+mcyeyl4s       mcyeyl4s
+trcisop6       js2ppypr
+js2ppypr       xiv9vxdp
+6g1y3eyy       mgz7w9y4
+Intersection of result sets:  {'mcyeyl4s', 'js2ppypr', 'urs5z4l1'}
+Doc urs5z4l1 has rank 1 in both results
+Doc mcyeyl4s has rank 2 in both results
+
+Query:  Disease models for infection, disease and transmission
+cordresearchengine   ours
+3r0kzn4y       yqs0wjfz
+zf9bwk1y       azqjvxtu
+sis4fjh5       h51zr96k
+mbn0rdv3       mbn0rdv3
+fiz00uj3       d5t7wg4y
+Intersection of result sets:  {'mbn0rdv3'}
+Doc mbn0rdv3 has rank 4 in both results
+
+Query:  Animal models for infection, disease and transmission
+cordresearchengine   ours
+2fpfvqdn       7hw23xae
+3r0kzn4y       3r0kzn4y
+zy8qjaai       2ewz8ok4
+28vx9w58       urwpow4n
+9onbvv9n       7kfi2yvu
+Intersection of result sets:  {'3r0kzn4y'}
+Doc 3r0kzn4y has rank 2 in both results
+
+Query:  Tools and studies to monitor phenotypic change and potential adaptation
+cordresearchengine   ours
+hstm3xn7       ngo0fyew
+8djm8mi6       20zr7mtt
+skxl62ik       2hbxvvpw
+20zr7mtt       c31kira9
+8v907g24       3f6a3s6h
+Intersection of result sets:  {'20zr7mtt'}
+
+Query:  Immune response and immunity
+cordresearchengine   ours
+o56bmedx       hjjzqboe
+jfe8neec       sg77zqs7
+2meqe1vy       31iws3lh
+zpwqunl5       jfe8neec
+80baxwgc       0vpwolaf
+Intersection of result sets:  {'jfe8neec'}
+
+Query:  Effectiveness of movement control strategies to prevent secondary transmission in health care and community settings
+cordresearchengine   ours
+qqsefagq       mfiaubqb
+7skgb6eu       qqsefagq
+iuu8vmwy       iuu8vmwy
+dq0xu85c       qrnsmhws
+mfiaubqb       eqq7k4pz
+Intersection of result sets:  {'mfiaubqb', 'qqsefagq', 'iuu8vmwy'}
+Doc iuu8vmwy has rank 3 in both results
+
+Query:  Effectiveness of personal protective equipment (PPE) and its usefulness to reduce risk of transmission in health care and community settings
+cordresearchengine   ours
+eeqw9i42       aoviner2
+eeycjjmn       x0ysvtx1
+y18nru1d       8dv8n3ea
+ou7n57vc       ztelgtyq
+0t28p4g6       aso63o3p
+No intersection of results
+
+Query:  Role of the environment in transmission
+cordresearchengine   ours
+6tk21bli       za7qm2on
+32midm3e       7kfi2yvu
+8qtintwl       x6uatd7j
+x3b6j5d0       2ewz8ok4
+n7mhwjiw       3q3sktuq
+No intersection of results
+

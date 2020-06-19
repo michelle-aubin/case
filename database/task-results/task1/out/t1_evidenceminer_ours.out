@@ -1,0 +1,111 @@
+Comparing task1\task1_results_evidenceminer.txt and task1\task1_results_ours.txt
+
+Query:  Range of incubation periods across age and health status
+evidenceminer   ours
+cd78n2rm       qcdlcxyb
+1769ovyk       it4ka7v0
+pckii4vh       pckii4vh
+iac9fak3       8anqfkmo
+tloaa3v1       66ulqu11
+Intersection of result sets:  {'pckii4vh'}
+Doc pckii4vh has rank 3 in both results
+
+Query:  Asymptomatic shedding and transmission in children
+evidenceminer   ours
+yb54i1ne       1z702pxb
+7e188tbq       0cu3syiw
+5m895fhj       zv0rrvo0
+1ckykkob       74xl0a8o
+9zt7bp7e       8homqmux
+No intersection of results
+
+Query:  Seasonality of transmission
+evidenceminer   ours
+bh9yfmie       82plcxv9
+9khx93c0       bh9yfmie
+kxbhlcce       t7c0drft
+kzhj0efp       03h85lvy
+k032ikww       1wkbjtji
+Intersection of result sets:  {'bh9yfmie'}
+
+Query:  Natural history and shedding of it from an infected person
+evidenceminer   ours
+krclgmc4       e0b8gnh8
+3eepsy3v       414grqif
+ymsl7snv       x46nvimq
+k95wrory       jy63p793
+6yu02snn       k69h9cc5
+No intersection of results
+
+Query:  Implementation of diagnostics and products to improve clinical processes
+evidenceminer   ours
+55r01n0x       urs5z4l1
+65drhnk8       mcyeyl4s
+izsmxy00       js2ppypr
+cj4qd3yw       xiv9vxdp
+s1oqkqef       mgz7w9y4
+No intersection of results
+
+Query:  Disease models for infection, disease and transmission
+evidenceminer   ours
+mbn0rdv3       yqs0wjfz
+de0y745b       azqjvxtu
+9xnjb7qv       h51zr96k
+1rzcrkmt       mbn0rdv3
+d378ighp       d5t7wg4y
+Intersection of result sets:  {'mbn0rdv3'}
+
+Query:  Animal models for infection, disease and transmission
+evidenceminer   ours
+d378ighp       7hw23xae
+9e9523i8       3r0kzn4y
+ldwx1wyc       2ewz8ok4
+yqs0wjfz       urwpow4n
+1m9y2qiu       7kfi2yvu
+No intersection of results
+
+Query:  Tools and studies to monitor phenotypic change and potential adaptation
+evidenceminer   ours
+3gq1eb7n       ngo0fyew
+44ychud2       20zr7mtt
+fnvwcebr       2hbxvvpw
+1ecqnstz       c31kira9
+120uu4dh       3f6a3s6h
+No intersection of results
+
+Query:  Immune response and immunity
+evidenceminer   ours
+z9780v62       hjjzqboe
+0lsobcnl       sg77zqs7
+mggsospc       31iws3lh
+8pptsdrs       jfe8neec
+nh34lgdh       0vpwolaf
+No intersection of results
+
+Query:  Effectiveness of movement control strategies to prevent secondary transmission in health care and community settings
+evidenceminer   ours
+vg2baps5       mfiaubqb
+7skgb6eu       qqsefagq
+7qd03xfi       iuu8vmwy
+yvc4432j       qrnsmhws
+nhg4jesr       eqq7k4pz
+No intersection of results
+
+Query:  Effectiveness of personal protective equipment (PPE) and its usefulness to reduce risk of transmission in health care and community settings
+evidenceminer   ours
+atmkmxid       aoviner2
+mpk7tgjx       x0ysvtx1
+x0im3m7v       8dv8n3ea
+zehnqsp7       ztelgtyq
+j9jtrnze       aso63o3p
+No intersection of results
+
+Query:  Role of the environment in transmission
+evidenceminer   ours
+b78pccz5       za7qm2on
+7a55odok       7kfi2yvu
+t2pgb4l9       x6uatd7j
+46yeaavx       2ewz8ok4
+uuv6nnei       3q3sktuq
+No intersection of results
+
