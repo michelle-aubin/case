@@ -50,14 +50,24 @@ def main(input_file, output_file):
                     print("\t%s" % token.text)
                     terms.append(token.text.lower())
 
+
             print("Getting scores...")
             start = time.time()
             # get docs that have all of the entities and tokens? or that have at least one? or just do all docs?
+            # doc_scores = {}
+            # with open("doc_ids.txt", "r", encoding="utf-8") as f_docs:
+            #     for row in f_docs:
+            #         doc_id = row.strip()
+            #         doc_scores[doc_id] = get_score(doc_id, terms, entities)
+
             doc_scores = {}
-            with open("doc_ids.txt", "r", encoding="utf-8") as f_docs:
-                for row in f_docs:
-                    doc_id = row.strip()
-                    doc_scores[doc_id] = get_score(doc_id, terms, entities)
+            # only search docs that are related to covid19
+            c.execute("select distinct doc_id from entities where type = \"CORONAVIRUS\";")
+            for row in c:
+                doc_id = row[0]
+                doc_scores[doc_id] = get_score(doc_id, terms, entities)
+
+
             print("Took %.2f seconds to get scores" % (time.time() - start))
             i = 0
             with open(output_file, "a") as f_out:
