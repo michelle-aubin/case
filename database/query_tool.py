@@ -3,7 +3,7 @@ import spacy
 from bm25 import get_score, print_get_score
 import time
 from constants import URL
-import csv
+# import csv
 import plac
 from xml.dom import minidom
 
@@ -23,6 +23,15 @@ def get_doc_ids():
     #     doc_scores[doc_id] = 0
 
     return doc_scores
+
+# Returns a list of queries
+def get_queries(input_file):
+    queries = []
+    xml_doc = minidom.parse(input_file)
+    topics = xml_doc.getElementsByTagName('topic')
+    for topic in topics:
+        queries.append(topics[0].getElementsByTagName('query')[0].childNodes[0].data)
+    return queries
 
 
 @plac.annotations(
@@ -51,39 +60,39 @@ def main(input_file, output_file):
     nlp = spacy.load("../custom_model3")
 
     doc_scores = get_doc_ids()
+    queries = get_queries(input_file)
 
-    with open(input_file, "r") as f_in:
-        for line in f_in:
-            terms = []
-            entities = []
-            doc = nlp(line.strip())
-            print("Entities found:")
-            for ent in doc.ents:
-                print("\t%s" % ent.text)
-                entities.append(ent.text.lower())
+    for query in queries:
+        terms = []
+        entities = []
+        doc = nlp(query)
+        print("Entities found:")
+        for ent in doc.ents:
+            print("\t%s" % ent.text)
+            entities.append(ent.text.lower())
 
-            print("Terms found:")
-            for token in doc:
-                # if token is a non entity and not a punct and not a stop word
-                if token.ent_iob == 2 and not token.is_punct and token.text.lower() not in stop_words:
-                    print("\t%s" % token.text)
-                    terms.append(token.text.lower())
+        print("Terms found:")
+        for token in doc:
+            # if token is a non entity and not a punct and not a stop word
+            if token.ent_iob == 2 and not token.is_punct and token.text.lower() not in stop_words:
+                print("\t%s" % token.text)
+                terms.append(token.text.lower())
 
 
-            print("Getting scores...")
-            start = time.time()
-            for doc_id in doc_scores:
-                doc_scores[doc_id] = get_score(doc_id, terms, entities)
+        print("Getting scores...")
+        start = time.time()
+        for doc_id in doc_scores:
+            doc_scores[doc_id] = get_score(doc_id, terms, entities)
 
-            print("Took %.2f seconds to get scores" % (time.time() - start))
-            i = 0
-            with open(output_file, "a") as f_out:
-                for doc, score in sorted(doc_scores.items(), key=lambda item: item[1], reverse=True):
-                    if i >= 5:
-                        f_out.write("\n")
-                        break
-                    i += 1
-                    f_out.write(doc + "\n")
+        print("Took %.2f seconds to get scores" % (time.time() - start))
+        i = 0
+        with open(output_file, "a") as f_out:
+            for doc, score in sorted(doc_scores.items(), key=lambda item: item[1], reverse=True):
+                if i >= 5:
+                    f_out.write("\n")
+                    break
+                i += 1
+                f_out.write(doc + "\n")
 
 if __name__ == "__main__":
     start_time = time.time()
