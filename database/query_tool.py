@@ -5,6 +5,24 @@ import time
 from constants import URL
 import csv
 import plac
+from xml.dom import minidom
+
+# Returns a dictionary with doc ids as key and score of 0 as values
+def get_doc_ids():
+    doc_scores = {}
+    # all docs
+    with open("doc_ids.txt", "r", encoding="utf-8") as f_docs:
+        for row in f_docs:
+            doc_id = row.strip()
+            doc_scores[doc_id] = 0
+
+    # only docs that are related to covid19
+    # c.execute("select distinct doc_id from entities where type = \"CORONAVIRUS\";")
+    # for row in c:
+    #     doc_id = row[0]
+    #     doc_scores[doc_id] = 0
+
+    return doc_scores
 
 
 @plac.annotations(
@@ -32,6 +50,7 @@ def main(input_file, output_file):
     print("Loading model...")
     nlp = spacy.load("../custom_model3")
 
+    doc_scores = get_doc_ids()
 
     with open(input_file, "r") as f_in:
         for line in f_in:
@@ -53,20 +72,8 @@ def main(input_file, output_file):
 
             print("Getting scores...")
             start = time.time()
-            # get docs that have all of the entities and tokens? or that have at least one? or just do all docs?
-            # doc_scores = {}
-            # with open("doc_ids.txt", "r", encoding="utf-8") as f_docs:
-            #     for row in f_docs:
-            #         doc_id = row.strip()
-            #         doc_scores[doc_id] = get_score(doc_id, terms, entities)
-
-            doc_scores = {}
-            # only search docs that are related to covid19
-            c.execute("select distinct doc_id from entities where type = \"CORONAVIRUS\";")
-            for row in c:
-                doc_id = row[0]
+            for doc_id in doc_scores:
                 doc_scores[doc_id] = get_score(doc_id, terms, entities)
-
 
             print("Took %.2f seconds to get scores" % (time.time() - start))
             i = 0
@@ -77,8 +84,6 @@ def main(input_file, output_file):
                         break
                     i += 1
                     f_out.write(doc + "\n")
-
-
 
 if __name__ == "__main__":
     start_time = time.time()
