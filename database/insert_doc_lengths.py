@@ -21,8 +21,7 @@ def main():
         doc_lengths[doc_id] += len(sentence)
 
     c.executescript("""
-                    drop table if exists doc_lengths;""")
-    c.executescript("""
+                    drop table if exists doc_lengths;
                     create table doc_lengths (
                         doc_id      char(8),
                         length   int,
@@ -32,8 +31,7 @@ def main():
     conn.commit()
 
     for doc_id, length in doc_lengths.items():
-        if length != 0:
-            c.execute("insert into doc_lengths values (?, ?);", (doc_id, length))
+        c.execute("insert into doc_lengths values (?, ?);", (doc_id, length))
     conn.commit()
 
 main()
