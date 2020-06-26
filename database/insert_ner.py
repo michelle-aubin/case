@@ -32,7 +32,7 @@ def main():
             print(fpath)
             with open(fpath, "r", encoding="utf-8") as f_in:
                 for line in f_in:
-                    entry = line.split("|")
+                    entry = line.split("|!|")
                    # print(entry)
                     try:
                         # entity|type|doc_id|sent_id|start|end

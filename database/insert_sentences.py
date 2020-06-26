@@ -16,7 +16,7 @@ def main():
             print(fpath)
             with open(fpath, "r", encoding="utf-8") as f_in:
                 for line in f_in:
-                    entry = line.split("|")
+                    entry = line.split("|!|")
                    # print(entry)
                     try:
                         values = (entry[0], int(entry[1]), entry[2].strip('\n'))
