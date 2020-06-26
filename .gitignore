@@ -13,3 +13,6 @@ database/idf.txt
 database/sorted_tokens.txt
 database/tokens_for_db.txt
 weird_docs.txt
+terms/
+sentences/
+entities/
