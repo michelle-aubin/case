@@ -67,7 +67,7 @@ def build_output(doc, doc_id, ent_f_out, sent_f_out, term_f_out):
               # term|!|doc id|!|sent id|!|offset start
                 data_list = [token.lower_, doc_id, str(sent_id), 
                             str(token.idx - sent.start_char)]
-                data_str = "|!|".join(data_list) + "\n"
+                data_str = SEP.join(data_list) + "\n"
                 term_f_out.write(data_str)
 
         ents = list(sent.ents)
