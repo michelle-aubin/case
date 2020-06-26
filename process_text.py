@@ -9,6 +9,7 @@ from spacy.util import minibatch
 from pathlib import Path
 
 SEP = "|!|"
+DP_PATH = "../2020-06-19/"
 
 # returns a tuple of (full text, cord uid) for a doc given
 # a dictionary from the metadata
@@ -22,7 +23,7 @@ def get_text_id_tuple(row_dict):
     abstract = row_dict['abstract']
     if abstract:
         texts.append(abstract)
-    with open(row_dict['json_file']) as f_json:
+    with open(DP_PATH+row_dict['json_file'], "r", encoding="utf-8") as f_json:
         full_text_dict = json.load(f_json)
         for paragraph_dict in full_text_dict['body_text']:
             text = paragraph_dict['text'].replace('\n', '')
