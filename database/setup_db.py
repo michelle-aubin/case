@@ -36,8 +36,8 @@ def main():
                         foreign key (doc_id,sent_id) references sentences
                     );
                     create table stop_words (
-                            term      text,
-                            primary key (term)        
+                            word      text,
+                            primary key (word)        
                         );
                     create table terms (
                         term        text,
