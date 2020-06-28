@@ -61,6 +61,8 @@ def main(input_file, output_file):
 
     doc_scores = get_doc_ids()
     queries = get_queries(input_file)
+    
+    total_docs = len(doc_scores)
 
     for query in queries:
         terms = []
@@ -82,7 +84,7 @@ def main(input_file, output_file):
         print("Getting scores...")
         start = time.time()
         for doc_id in doc_scores:
-            doc_scores[doc_id] = get_score(doc_id, terms, entities)
+            doc_scores[doc_id] = get_score(doc_id, terms, entities, total_docs)
 
         print("Took %.2f seconds to get scores" % (time.time() - start))
         i = 0
