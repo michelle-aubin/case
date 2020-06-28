@@ -26,7 +26,7 @@ def main():
                     where e.doc_id = d.doc_id
                     group by e.entity, e.doc_id;
             """)
-    print("Querying db took %s seconds", time.time() - start)
+    print("Querying db took %s seconds" % time.time() - start)
     for row in c:
         values = (row[0], row[1], row[2] / row[3])
         c2.execute("insert into ent_tf values (?, ?, ?);", values)

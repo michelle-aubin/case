@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import time
+from constants import SEP
 
 def main():
     conn = sqlite3.connect("cord19.db")
@@ -8,7 +9,6 @@ def main():
     c.execute("PRAGMA foreign_keys = ON;")
     conn.commit()
 
-    drop_start = time.time()
     c.executescript("""
                 drop table if exists entities;
                 create table entities (
@@ -21,18 +21,14 @@ def main():
                                     foreign key (doc_id,sent_id) references sentences
                                 );
                 """)
-    print("Dropping old table took %s seconds" % (time.time() - drop_start))
-    # iterate through files in sentences directory
-  #  os.chdir('../sentences')
     insert_time = time.time()
-    for root, dirs, files in os.walk("../ner-results"):
+    for root, dirs, files in os.walk("..\entities"):
         for name in files:
             data = []
             fpath = os.path.join(root, name)
-            print(fpath)
             with open(fpath, "r", encoding="utf-8") as f_in:
                 for line in f_in:
-                    entry = line.split("|!|")
+                    entry = line.split(SEP)
                    # print(entry)
                     try:
                         # entity|type|doc_id|sent_id|start|end
