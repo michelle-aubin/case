@@ -41,8 +41,9 @@ def get_queries(input_file):
 @plac.annotations(
    input_file=("Input text file of queries", "positional", None, str),
    output_file=("Output file", "positional", None, str), 
+   run_tag=("Tag representing the run", "positional", None, str)
 )
-def main(input_file, output_file):
+def main(input_file, output_file, run_tag):
     conn = sqlite3.connect("cord19.db")
     c = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")
@@ -79,9 +80,10 @@ def main(input_file, output_file):
     print("Loading model...")
     nlp = spacy.load("../custom_model3")
 
-    for query in queries:
+    for tnum, query in enumerate(queries):
         terms = []
         entities = []
+        tnum += 1
         doc = nlp(query)
         print("Entities found:")
         for ent in doc.ents:
@@ -105,13 +107,18 @@ def main(input_file, output_file):
         i = 0
         with open(output_file, "a") as f_out:
             for doc, score in sorted(doc_scores.items(), key=lambda item: item[1], reverse=True):
+                # return max 1000 docs
                 if i >= 1000 or score == 0:
+                    # no docs returned
                     if i == 0:
-                        f_out.write("no-results\n")
-                    f_out.write("\n")
+                        # make dummy list
+                        for j in range(1000):
+                            output_vals = [str(tnum), "Q0", doc, str(j+1), str(score), run_tag, "\n"]
+                            f_out.write("\t".join(output_vals))
                     break
                 i += 1
-                f_out.write(doc + "\n")
+                output_vals = [str(tnum), "Q0", doc, str(i), str(score), run_tag, "\n"]
+                f_out.write("\t".join(output_vals))
 
 if __name__ == "__main__":
     start_time = time.time()
