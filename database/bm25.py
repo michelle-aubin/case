@@ -21,11 +21,11 @@ def get_score(doc_id, terms, entities, total_docs, avg_length):
 
     for term in terms:
         # get idf of the term
-        c.execute("select idf from idf where term = :term;", {"term": term})
+        c.execute("select idf from terms_idf where term = :term;", {"term": term})
         result = c.fetchone()
         idf = result[0] if result else get_idf(0, total_docs)
         # get tf of the term in the doc
-        c.execute("select frequency from tf where term = :term and doc_id = :doc_id;", {"term": term, "doc_id":doc_id})
+        c.execute("select frequency from terms_tf where term = :term and doc_id = :doc_id;", {"term": term, "doc_id":doc_id})
         result = c.fetchone()
         tf = result[0] if result else 0
         # if term is not in doc return score of 0
@@ -35,11 +35,11 @@ def get_score(doc_id, terms, entities, total_docs, avg_length):
         score += calc_summand(tf, idf, doc_length, avg_length)
     for ent in entities:
         # get idf of the entity
-        c.execute("select idf from ent_idf where entity = :entity;", {"entity": ent})
+        c.execute("select idf from ents_idf where entity = :entity;", {"entity": ent})
         result = c.fetchone()
         idf = result[0] if result else get_idf(0, total_docs)
         # get tf of the entity in the doc
-        c.execute("select frequency from ent_tf where entity = :entity and doc_id = :doc_id;", {"entity": ent, "doc_id":doc_id})
+        c.execute("select frequency from ents_tf where entity = :entity and doc_id = :doc_id;", {"entity": ent, "doc_id":doc_id})
         result = c.fetchone()
         tf = result[0] if result else 0
         # if term is not in doc return score of 0
