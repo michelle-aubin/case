@@ -1,6 +1,6 @@
 import sqlite3
 import spacy
-from bm25 import get_score, print_get_score
+from bm25 import get_score
 import time
 from constants import URL
 # import csv
@@ -8,12 +8,16 @@ import plac
 from xml.dom import minidom
 
 # Returns a dictionary with doc ids as key and score of 0 as values
-def get_doc_ids():
+# c: cursor for database
+def get_doc_ids(c):
+    with open("trec-covid/round3/docids-rnd3.txt", "r") as f_in:
+        rnd3_docs = {line.strip() for line in f_in}
     doc_scores = {}
     # all docs
-    with open("doc_ids.txt", "r", encoding="utf-8") as f_docs:
-        for row in f_docs:
-            doc_id = row.strip()
+    c.execute("select doc_id from doc_lengths;")
+    for row in c:
+        doc_id = row[0]
+        if doc_id in rnd3_docs:
             doc_scores[doc_id] = 0
 
     # only docs that are related to covid19
@@ -44,8 +48,9 @@ def main(input_file, output_file):
     c.execute("PRAGMA foreign_keys = ON;")
     conn.commit()
 
+    print("Getting documents...")
     stop_words = set()
-    c.execute("select term from stop_words;")
+    c.execute("select word from stop_words;")
     for row in c:
         stop_words.add(row[0])
 
@@ -56,13 +61,21 @@ def main(input_file, output_file):
     #     for row in metadata:
     #         urls[row.get("cord_uid")] = row.get("json_file")
 
-    print("Loading model...")
-    nlp = spacy.load("../custom_model3")
-
-    doc_scores = get_doc_ids()
+    doc_scores = get_doc_ids(c)
     queries = get_queries(input_file)
     
     total_docs = len(doc_scores)
+
+    avg_length = 0
+    for doc in doc_scores:
+        c.execute("select length from doc_lengths where doc_id = :doc_id", {"doc_id": doc})
+        length = c.fetchone()[0]
+        avg_length += length
+    avg_length = avg_length / total_docs
+
+
+    print("Loading model...")
+    nlp = spacy.load("../custom_model3")
 
     for query in queries:
         terms = []
@@ -84,13 +97,13 @@ def main(input_file, output_file):
         print("Getting scores...")
         start = time.time()
         for doc_id in doc_scores:
-            doc_scores[doc_id] = get_score(doc_id, terms, entities, total_docs)
+            doc_scores[doc_id] = get_score(doc_id, terms, entities, total_docs, avg_length)
 
         print("Took %.2f seconds to get scores" % (time.time() - start))
         i = 0
         with open(output_file, "a") as f_out:
             for doc, score in sorted(doc_scores.items(), key=lambda item: item[1], reverse=True):
-                if i >= 5:
+                if i >= 1000 or score == 0:
                     f_out.write("\n")
                     break
                 i += 1
