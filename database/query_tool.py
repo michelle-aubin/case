@@ -1,6 +1,6 @@
 import sqlite3
 import spacy
-from bm25 import get_score
+from bm25 import get_score, get_idf
 import time
 from constants import URL
 # import csv
@@ -48,7 +48,7 @@ def main(input_file, output_file):
     c.execute("PRAGMA foreign_keys = ON;")
     conn.commit()
 
-    print("Getting documents...")
+    print("Gathering some data...")
     stop_words = set()
     c.execute("select word from stop_words;")
     for row in c:
@@ -64,7 +64,8 @@ def main(input_file, output_file):
     doc_scores = get_doc_ids(c)
     queries = get_queries(input_file)
     
-    total_docs = len(doc_scores)
+    c.execute("select count(doc_id) from doc_lengths;")
+    total_docs = c.fetchone()[0]
 
     avg_length = 0
     for doc in doc_scores:
@@ -73,6 +74,7 @@ def main(input_file, output_file):
         avg_length += length
     avg_length = avg_length / total_docs
 
+    max_idf = get_idf(1, total_docs)
 
     print("Loading model...")
     nlp = spacy.load("../custom_model3")
@@ -97,13 +99,15 @@ def main(input_file, output_file):
         print("Getting scores...")
         start = time.time()
         for doc_id in doc_scores:
-            doc_scores[doc_id] = get_score(doc_id, terms, entities, total_docs, avg_length)
+            doc_scores[doc_id] = get_score(doc_id, terms, entities, total_docs, avg_length, max_idf)
 
         print("Took %.2f seconds to get scores" % (time.time() - start))
         i = 0
         with open(output_file, "a") as f_out:
             for doc, score in sorted(doc_scores.items(), key=lambda item: item[1], reverse=True):
                 if i >= 1000 or score == 0:
+                    if i == 0:
+                        f_out.write("no-results\n")
                     f_out.write("\n")
                     break
                 i += 1
