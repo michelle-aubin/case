@@ -1,6 +1,6 @@
 import sqlite3
 import math
-from constants import AVG_DOC_LENGTH, BM25_B, BM25_K1, TOTAL_DOCS, BM25_delta
+from constants import BM25_B, BM25_K1, BM25_delta
 
 
 # Returns BM25 score of a document
@@ -8,7 +8,7 @@ from constants import AVG_DOC_LENGTH, BM25_B, BM25_K1, TOTAL_DOCS, BM25_delta
 # terms: list of query terms that are not entities
 # entities: list of query terms that are entities
 # total_docs: num of docs in the corpus
-def get_score(doc_id, terms, entities, total_docs):
+def get_score(doc_id, terms, entities, total_docs, avg_length):
     conn = sqlite3.connect("cord19.db")
     c = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")
@@ -32,7 +32,7 @@ def get_score(doc_id, terms, entities, total_docs):
         if tf == 0:
             return 0
         # calculate score
-        score += calc_summand(tf, idf, doc_length)
+        score += calc_summand(tf, idf, doc_length, avg_length)
     for ent in entities:
         # get idf of the entity
         c.execute("select idf from ent_idf where entity = :entity;", {"entity": ent})
@@ -46,7 +46,7 @@ def get_score(doc_id, terms, entities, total_docs):
         if tf == 0:
             return 0
         # calculate score
-        score += calc_summand(tf, idf, doc_length)
+        score += calc_summand(tf, idf, doc_length, avg_length)
     
     return score
 
@@ -54,10 +54,10 @@ def get_score(doc_id, terms, entities, total_docs):
 # tf: the term frequency of the term in the doc
 # idf: the inverse document frequency of the term
 # doc_length: the length of the doc in words
-def calc_summand(tf, idf, doc_length):
+def calc_summand(tf, idf, doc_length, avg_length):
     numerator = tf * (BM25_K1 + 1)
 #    print("\t\tNumerator: %f" % numerator)
-    denominator = tf + BM25_K1 * (1 - BM25_B + BM25_B * (doc_length / AVG_DOC_LENGTH))
+    denominator = tf + BM25_K1 * (1 - BM25_B + BM25_B * (doc_length / avg_length))
 #    print("\t\tDenominator: %f" % denominator)
     return idf * ((numerator / denominator) + BM25_delta)
 
