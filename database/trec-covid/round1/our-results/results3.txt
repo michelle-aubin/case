@@ -1,0 +1,180 @@
+Query:  coronavirus origin
+	iql8h6td - partially
+	45eu9x4x - not
+	csr1wnvc - not
+	3n060djb - not
+	c7j2eoz0 - not
+Query:  coronavirus response to weather changes
+	iql8h6td - not
+	2p9j4ksy - not
+	5g0almil - partially
+	h5ufxzv9 - not
+	gxsx8ixg - not
+Query:  coronavirus immunity
+	iql8h6td - not
+	hjjzqboe - fully
+	csr1wnvc - not
+	xrinnull - not
+	46dojsa0 - not
+Query:  how do people die from the coronavirus
+	ihfvqner - not
+	s4egqoqa - not
+	33yht6x0 - not
+	iql8h6td - not
+	rdzs7vnt - not
+Query:  animal models of COVID-19
+	omq7z0ei - not
+	7i6xyus8 - not
+	vc3lhm0f - not
+	ztjf4rnt - not
+	zb7zlb9c - not
+Query:  coronavirus test rapid testing
+	u4iri70d - partially
+	iql8h6td - not
+	3n060djb - not
+	6ihzhngr - fully
+	1b3pigtl - not
+Query:  serological tests for coronavirus
+	iql8h6td - not
+	8ijbesl8 - fully
+	ebqq8x8a - not
+	7p2uinue - not
+	m9yv4qkm - fully
+Query:  coronavirus under reporting
+	iql8h6td - not
+	csr1wnvc - not
+	xinfo9xw - not
+	px70bft2 - not
+	hkrarxsd - not
+Query:  coronavirus in Canada
+	iql8h6td - not
+	eed4v2jl - not
+	obeinwyq - not
+	gxdb18i0 - not
+	arzn2o1w - not
+Query:  coronavirus social distancing impact
+	iql8h6td - not
+	96s8am2u - not
+	vdrd74nz - fully
+	0xgu9m4i - not
+	9m5godtw - not
+Query:  coronavirus hospital rationing
+	iql8h6td - not
+	rsnzyheu - not
+	qobsyfi6 - not
+	bpurebq4 - not
+	8h9jou6k - not
+Query:  coronavirus quarantine
+	iql8h6td - not
+	4llyne6i - not
+	qfl3i7c6 - not
+	45zzj4ts - not
+	9hrrkqgi - fully
+Query:  how does coronavirus spread
+	iql8h6td - not
+	code9hzz - partially
+	csr1wnvc - not
+	3n060djb - not
+	eylpfrj3 - not
+Query:  coronavirus super spreaders
+	iql8h6td - not
+	f0ny4ur5 - not
+	axns3ukm - partially
+	rnnz0gjc - not
+	a8us3r6c - partially
+Query:  coronavirus outside body
+	iql8h6td - not
+	y1cczj4p - not
+	csr1wnvc - not
+	ohekjng8 - not
+	7reqkx3h - not
+Query:  how long does coronavirus survive on surfaces
+	iql8h6td - not
+	d3b5o5d9 - not
+	pvl44u4d - partially
+	khpc9f98 - partially
+	80dfqjql - fully
+Query:  coronavirus clinical trials
+	iql8h6td - not
+	nrnc8u28 - fully
+	hkm9agqg - fully
+	g6rpxady - not
+	shmitjd7 - not
+Query:  masks prevent coronavirus
+	iql8h6td - not
+	gnhu2gni - not
+	cmeiqvnp - fully
+	opbmronr - not
+	vvsy8qsz - partially
+Query:  what alcohol sanitizer kills coronavirus
+	iql8h6td - not
+	csr1wnvc - not
+	egkd5o1u - not
+	021q9884 - not
+	3n060djb - not
+Query:  coronavirus and ACE inhibitors
+	iql8h6td - not
+	3bt1ncgj - fully
+	0anjv43k - fully
+	4ozwhcyi - not
+	fexs1dm6 - not
+Query:  coronavirus mortality
+	iql8h6td - not
+	cimut01e - not
+	z7oh7xy9 - not
+	csr1wnvc - not
+	qf1vnce2 - not
+Query:  coronavirus heart impacts
+	iql8h6td - not
+	pd1cawgh - not
+	3wbei5h2 - not
+	ua04hdfm - not
+	2xwc3lqb - not
+Query:  coronavirus hypertension
+	iql8h6td - not
+	csr1wnvc - not
+	3n060djb - not
+	c7j2eoz0 - not
+	i06zmlhj - not
+Query:  coronavirus diabetes
+	iql8h6td - not
+	csr1wnvc - not
+	3n060djb - not
+	c7j2eoz0 - not
+	i06zmlhj - not
+Query:  coronavirus biomarkers
+	iql8h6td - not
+	8cixsjrf - not
+	6svauuf5 - not
+	csr1wnvc - not
+	761ymmaf - not
+Query:  coronavirus early symptoms
+	iql8h6td - not
+	65r6ql8f - fully
+	4z5e291f - not
+	i06zmlhj - not
+	csr1wnvc - not
+Query:  coronavirus asymptomatic
+	iql8h6td - not
+	608qex0d - fully
+	8pjoz64q - fully
+	xwvtjm6s - fully
+	wfql1gs5 - fully
+Query:  coronavirus hydroxychloroquine
+	iql8h6td - not
+	79ruujhu - fully
+	cpu3q9o6 - fully
+	0sl4e6h9 - not
+	okwlx5db - not
+Query:  coronavirus drug repurposing
+	iql8h6td - not
+	e357zmsj - fully
+	hrntvohh - partially
+	j5nmifhj - partially
+	2cx5x55y - not
+Query:  coronavirus remdesivir
+	iql8h6td - not
+	gqqdx2r5 - fully
+	9hxihlw9 - fully
+	uc3slu8q - partially
+	1hwdd7nq - fully
