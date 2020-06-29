@@ -8,7 +8,7 @@ from constants import BM25_B, BM25_K1, BM25_delta
 # terms: list of query terms that are not entities
 # entities: list of query terms that are entities
 # total_docs: num of docs in the corpus
-def get_score(doc_id, terms, entities, total_docs, avg_length):
+def get_score(doc_id, terms, entities, total_docs, avg_length, max_idf):
     conn = sqlite3.connect("cord19.db")
     c = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")
@@ -21,9 +21,12 @@ def get_score(doc_id, terms, entities, total_docs, avg_length):
 
     for term in terms:
         # get idf of the term
-        c.execute("select idf from terms_idf where term = :term;", {"term": term})
+        c.execute("select idf, idf2 from terms_idf where term = :term;", {"term": term})
         result = c.fetchone()
-        idf = result[0] if result else get_idf(0, total_docs)
+        idf1 = result[0] if result else 0
+        idf2 = result[1] if result else 0
+        # get geometric mean
+        idf = get_geometric_mean(idf1, idf2, max_idf)
         # get tf of the term in the doc
         c.execute("select frequency from terms_tf where term = :term and doc_id = :doc_id;", {"term": term, "doc_id":doc_id})
         result = c.fetchone()
@@ -35,9 +38,12 @@ def get_score(doc_id, terms, entities, total_docs, avg_length):
         score += calc_summand(tf, idf, doc_length, avg_length)
     for ent in entities:
         # get idf of the entity
-        c.execute("select idf from ents_idf where entity = :entity;", {"entity": ent})
+        c.execute("select idf, idf2 from ents_idf where entity = :entity;", {"entity": ent})
         result = c.fetchone()
-        idf = result[0] if result else get_idf(0, total_docs)
+        idf1 = result[0] if result else 0
+        idf2 = result[1] if result else 0
+        # get geometric mean
+        idf = get_geometric_mean(idf1, idf2, max_idf)
         # get tf of the entity in the doc
         c.execute("select frequency from ents_tf where entity = :entity and doc_id = :doc_id;", {"entity": ent, "doc_id":doc_id})
         result = c.fetchone()
@@ -74,3 +80,17 @@ def get_idf(count, total_docs):
     idf = math.log10(numerator/denominator)
     return idf
 
+# gets geometric mean of idf1 and idf2
+# returns idf1 if idf2 is None
+def get_geometric_mean(idf1, idf2, max_idf):
+    if idf2 == None:
+        return idf1
+    else:
+        idf2 = normalize_idf(idf2, max_idf)
+        return math.sqrt(idf1 * idf2)
+
+# gets normalized idf for idfs in en-idf.txt
+# max_idf: max idf in cord-19 corpus
+def normalize_idf(idf, max_idf):
+    # 13.999 is max idf in en-idf.txt
+    return (idf / 14) * max_idf
