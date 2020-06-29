@@ -39,10 +39,14 @@ def main(f_result, f_key, f_queries):
             print("Query: ", query)
             judgements = get_judgements(f_key, tnum+1)
             results = []
-            for i in range(5):
-                result = f_in.readline().strip()
-                results.append(result)
-            f_in.readline()
+            for i in range(1000):
+                result = f_in.readline()
+                if len(result) < 3:
+                    break
+                else:
+                    results.append(result.strip())
+                if i == 999:
+                    f_in.readline()
 
             for doc_id in results:
                 try:
@@ -51,12 +55,13 @@ def main(f_result, f_key, f_queries):
                     score = 0
                 finally:
                     if score == 0:
-                        score_str = "not"
+                        score_str = ""
                     elif score == 1:
                         score_str = "partially"
                     else:
                         score_str = "fully"
                     print("\t%s - %s" % (doc_id, score_str))
+            print()
 
 if __name__ == "__main__":
     plac.call(main)
