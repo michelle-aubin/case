@@ -17,3 +17,5 @@ def main():
     db_tools.insert_doc_lengths(conn)
     db_tools.insert_terms(conn, reset)
     db_tools.insert_entities(conn, reset)
+
+main()
