@@ -126,8 +126,8 @@ def insert_sentences(conn, reset):
                     except Exception as e:
                         print(e)
                         print("Bad line: ", entry)
-        conn.commit()
-        print("Populating sentences took %s seconds" % (time.time() - start))
+    conn.commit()
+    print("Populating sentences took %s seconds" % (time.time() - start))
 
 
 # Inserts values into stop_words table
@@ -280,7 +280,7 @@ def insert_ents_idf(conn):
 
     c.executescript("""
                     drop table if exists ents_idf;
-                    create table ent_idf (
+                    create table ents_idf (
                         entity      text,
                         idf       float,
                         idf2      float,
@@ -316,6 +316,7 @@ def insert_ents_idf(conn):
             values = (ent, idf, idf2)
             c2.execute("insert into ents_idf values (?, ?, ?);", values)
     conn.commit()    
+    print("Populating ents_idf took %s seconds" % (time.time() - start))
 
 # Inserts values into ents_tf table
 # conn: connection to the database
