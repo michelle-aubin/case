@@ -112,9 +112,8 @@ def main(input_file, output_file, run_tag):
                     # no docs returned
                     if i == 0:
                         # make dummy list
-                        for j in range(1000):
-                            output_vals = [str(tnum), "Q0", doc, str(j+1), str(score), run_tag, "\n"]
-                            f_out.write("\t".join(output_vals))
+                        output_vals = [str(tnum), "Q0", doc, str(j+1), str(score), run_tag, "\n"]
+                        f_out.write("\t".join(output_vals))
                     break
                 i += 1
                 output_vals = [str(tnum), "Q0", doc, str(i), str(score), run_tag, "\n"]
