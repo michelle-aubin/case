@@ -28,9 +28,6 @@ def get_score(doc_id, terms, entities, total_docs, avg_length, max_idf):
         c.execute("select frequency from terms_tf where term = :term and doc_id = :doc_id;", {"term": term, "doc_id":doc_id})
         result = c.fetchone()
         tf = result[0] if result else 0
-        # if term is not in doc return score of 0
-        if tf == 0:
-            return 0
         # calculate score
         score += calc_summand(tf, idf, doc_length, avg_length)
     for ent in entities:
@@ -41,10 +38,6 @@ def get_score(doc_id, terms, entities, total_docs, avg_length, max_idf):
         # get tf of the entity in the doc
         c.execute("select frequency from ents_tf where entity = :entity and doc_id = :doc_id;", {"entity": ent, "doc_id":doc_id})
         result = c.fetchone()
-        tf = result[0] if result else 0
-        # if term is not in doc return score of 0
-        if tf == 0:
-            return 0
         # calculate score
         score += calc_summand(tf, idf, doc_length, avg_length)
     
