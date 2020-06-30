@@ -21,12 +21,9 @@ def get_score(doc_id, terms, entities, total_docs, avg_length, max_idf):
 
     for term in terms:
         # get idf of the term
-        c.execute("select idf, idf2 from terms_idf where term = :term;", {"term": term})
+        c.execute("select idf from terms_idf where term = :term;", {"term": term})
         result = c.fetchone()
-        idf1 = result[0] if result else 0
-        idf2 = result[1] if result else 0
-        # get geometric mean
-        idf = get_geometric_mean(idf1, idf2, max_idf)
+        idf = result[0] if result else 0
         # get tf of the term in the doc
         c.execute("select frequency from terms_tf where term = :term and doc_id = :doc_id;", {"term": term, "doc_id":doc_id})
         result = c.fetchone()
@@ -38,12 +35,9 @@ def get_score(doc_id, terms, entities, total_docs, avg_length, max_idf):
         score += calc_summand(tf, idf, doc_length, avg_length)
     for ent in entities:
         # get idf of the entity
-        c.execute("select idf, idf2 from ents_idf where entity = :entity;", {"entity": ent})
+        c.execute("select idf from ents_idf where entity = :entity;", {"entity": ent})
         result = c.fetchone()
-        idf1 = result[0] if result else 0
-        idf2 = result[1] if result else 0
-        # get geometric mean
-        idf = get_geometric_mean(idf1, idf2, max_idf)
+        idf = result[0] if result else 0
         # get tf of the entity in the doc
         c.execute("select frequency from ents_tf where entity = :entity and doc_id = :doc_id;", {"entity": ent, "doc_id":doc_id})
         result = c.fetchone()
