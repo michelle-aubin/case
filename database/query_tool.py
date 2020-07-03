@@ -37,6 +37,40 @@ def get_queries(input_file):
         queries.append(topic.getElementsByTagName('question')[0].childNodes[0].data)
     return queries
 
+# Returns lists of terms and entities given a query
+def get_terms_and_ents(query, nlp, stop_words):
+    terms = []
+    entities = []
+    splitted_terms = []
+    splitted_ents = []
+    doc = nlp(query)
+    print("Entities found:")
+    for ent in doc.ents:
+        print("\t%s" % ent.text)
+        entities.append(ent.text.lower())
+        words = ent.text.split(" ")
+        # entity is more than 1 word so split it
+        if len(words) > 1:
+            for word in words:
+                word_doc = nlp(word)
+                # word is a term
+                if len(word_doc.ents) == 0:
+                    splitted_terms.append(word_doc[0].text.lower())
+                # word is an entity
+                else:
+                    splitted_ents.append(word_doc[0].text.lower())
+        else:
+            splitted_ents.append(ent.text.lower())
+
+    print("Terms found:")
+    for token in doc:
+        # if token is a non entity and not a punct and not a stop word
+        if token.ent_iob == 2 and not token.is_punct and token.text.lower() not in stop_words:
+            print("\t%s" % token.text)
+            terms.append(token.text.lower())
+            splitted_terms.append(token.text.lower())
+    # return original terms and ents, and splitted
+    return terms, entities, splitted_terms, splitted_ents
 
 @plac.annotations(
    input_file=("Input text file of queries", "positional", None, str),
@@ -54,13 +88,6 @@ def main(input_file, output_file, run_tag):
     c.execute("select word from stop_words;")
     for row in c:
         stop_words.add(row[0])
-
-    # get links to json files of the docs
-    # urls = {}
-    # with open("../clean_metadata.csv", "r", encoding="utf-8") as f_meta:
-    #     metadata = csv.DictReader(f_meta)
-    #     for row in metadata:
-    #         urls[row.get("cord_uid")] = row.get("json_file")
 
     doc_scores = get_doc_ids(c)
     queries = get_queries(input_file)
@@ -81,27 +108,19 @@ def main(input_file, output_file, run_tag):
     nlp = spacy.load("../custom_model3")
 
     for tnum, query in enumerate(queries):
-        terms = []
-        entities = []
         tnum += 1
-        doc = nlp(query)
-        print("Entities found:")
-        for ent in doc.ents:
-            print("\t%s" % ent.text)
-            entities.append(ent.text.lower())
-
-        print("Terms found:")
-        for token in doc:
-            # if token is a non entity and not a punct and not a stop word
-            if token.ent_iob == 2 and not token.is_punct and token.text.lower() not in stop_words:
-                print("\t%s" % token.text)
-                terms.append(token.text.lower())
-
+        terms, entities, splitted_terms, splitted_ents = get_terms_and_ents(query, nlp, stop_words)
 
         print("Getting scores...")
         start = time.time()
         for doc_id in doc_scores:
             doc_scores[doc_id] = get_score(doc_id, terms, entities, total_docs, avg_length, max_idf)
+            # if entities have been split, get score using the split version
+            if terms != splitted_terms or entities != splitted_ents:
+                split_score = get_score(doc_id, splitted_terms, splitted_ents, total_docs, avg_length, max_idf)
+                # take max between split score and original score
+                if split_score > doc_scores[doc_id]:
+                    doc_scores[doc_id] = split_score
 
         print("Took %.2f seconds to get scores" % (time.time() - start))
         i = 0
