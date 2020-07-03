@@ -34,7 +34,7 @@ def get_queries(input_file):
     xml_doc = minidom.parse(input_file)
     topics = xml_doc.getElementsByTagName('topic')
     for topic in topics:
-        queries.append(topic.getElementsByTagName('query')[0].childNodes[0].data)
+        queries.append(topic.getElementsByTagName('question')[0].childNodes[0].data)
     return queries
 
 
