@@ -112,7 +112,7 @@ def main(input_file, output_file, run_tag):
                     # no docs returned
                     if i == 0:
                         # make dummy list
-                        output_vals = [str(tnum), "Q0", doc, str(j+1), str(score), run_tag, "\n"]
+                        output_vals = [str(tnum), "Q0", doc, str(i+1), str(score), run_tag, "\n"]
                         f_out.write("\t".join(output_vals))
                     break
                 i += 1
