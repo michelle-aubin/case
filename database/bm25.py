@@ -1,6 +1,6 @@
 import sqlite3
 import math
-from constants import BM25_B, BM25_K1, BM25_delta
+from constants import BM25_B, BM25_K1, BM25_delta, TF_F0
 
 
 # Returns BM25 score of a document
@@ -30,10 +30,10 @@ def get_score(doc_id, terms, entities, total_docs, avg_length, max_idf):
         # get tf of the term in the doc
         c.execute("select frequency from terms_tf where term = :term and doc_id = :doc_id;", {"term": term, "doc_id":doc_id})
         result = c.fetchone()
-        tf = result[0] if result else 0
+        tf = result[0] if result else get_tf(0, doc_length, get_num_unique(doc_id, c))
         # if term is not in doc return score of 0
-        if tf == 0:
-            return 0
+        # if tf == 0:
+        #     return 0
         # calculate score
         score += calc_summand(tf, idf, doc_length, avg_length)
     for ent in entities:
@@ -47,10 +47,10 @@ def get_score(doc_id, terms, entities, total_docs, avg_length, max_idf):
         # get tf of the entity in the doc
         c.execute("select frequency from ents_tf where entity = :entity and doc_id = :doc_id;", {"entity": ent, "doc_id":doc_id})
         result = c.fetchone()
-        tf = result[0] if result else 0
+        tf = result[0] if result else get_tf(0, doc_length, get_num_unique(doc_id, c))
         # if term is not in doc return score of 0
-        if tf == 0:
-            return 0
+        # if tf == 0:
+        #     return 0
         # calculate score
         score += calc_summand(tf, idf, doc_length, avg_length)
     
@@ -80,6 +80,16 @@ def get_idf(count, total_docs):
     idf = math.log10(numerator/denominator)
     return idf
 
+# Calculates and returns tf given the raw count of a term in a doc,
+# the doc length and num of unique terms in the doc
+# count: num of times that the term appears in the doc
+# doc_length: length of the doc in words
+# num_unique: num of unique terms in the doc
+def get_tf(count, doc_length, num_unique):
+    numerator = count + TF_F0
+    denominator = doc_length + (TF_F0 * num_unique)
+    return numerator / denominator
+
 # gets geometric mean of idf1 and idf2
 # returns idf1 if idf2 is None
 def get_geometric_mean(idf1, idf2, max_idf):
@@ -94,3 +104,13 @@ def get_geometric_mean(idf1, idf2, max_idf):
 def normalize_idf(idf, max_idf):
     # 13.999 is max idf in en-idf.txt
     return (idf / 14) * max_idf
+
+# Returns the number of unique terms + unique entities in a doc
+# doc_id: the document id
+# c: cursor for the database
+def get_num_unique(doc_id, c):
+    c.execute("select count(distinct term) from terms where doc_id = :doc_id;", {"doc_id": doc_id})
+    num_unique = c.fetchone()[0]
+    c.execute("select count(distinct entity) from entities where doc_id = :doc_id;", {"doc_id": doc_id})
+    num_unique += c.fetchone()[0]
+    return num_unique

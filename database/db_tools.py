@@ -3,7 +3,7 @@ import os
 import time
 from constants import SEP
 from collections import defaultdict
-from bm25 import get_idf
+from bm25 import get_idf, get_tf, get_num_unique
 
 # Inserts values into entities table
 # conn: connection to the database
@@ -264,7 +264,13 @@ def insert_terms_tf(conn):
                     group by t.term, t.doc_id;
             """)
     for row in c:
-        values = (row[0], row[1], row[2] / row[3])
+        term = row[0]
+        doc_id = row[1]
+        count = row[2]
+        doc_length = row[3]
+        num_unique = get_num_unique(doc_id, c2)
+        tf = get_tf(count, doc_length, num_unique)
+        values = (term, doc_id, tf)
         c2.execute("insert into terms_tf values (?, ?, ?);", values)
     conn.commit()
     print("Populating terms_tf took %s seconds" % (time.time() - start))
@@ -342,7 +348,13 @@ def insert_ents_tf(conn):
                     group by e.entity, e.doc_id;
             """)
     for row in c:
-        values = (row[0], row[1], row[2] / row[3])
+        entity = row[0]
+        doc_id = row[1]
+        count = row[2]
+        doc_length = row[3]
+        num_unique = get_num_unique(doc_id, c2)
+        tf = get_tf(count, doc_length, num_unique)
+        values = (entity, doc_id, tf)
         c2.execute("insert into ents_tf values (?, ?, ?);", values)
     conn.commit()
     print("Populating ents_tf took %s seconds" % (time.time() - start))
