@@ -16,6 +16,7 @@ def get_score(doc_id, terms, entities, total_docs, avg_length, max_idf):
 
     c.execute("select length from doc_lengths where doc_id = :doc_id;", {"doc_id":doc_id})
     doc_length = c.fetchone()[0]
+    default_tf = get_tf(0, doc_length, get_num_unique(doc_id, c))
 
     score = 0
 
@@ -30,7 +31,7 @@ def get_score(doc_id, terms, entities, total_docs, avg_length, max_idf):
         # get tf of the term in the doc
         c.execute("select frequency from terms_tf where term = :term and doc_id = :doc_id;", {"term": term, "doc_id":doc_id})
         result = c.fetchone()
-        tf = result[0] if result else get_tf(0, doc_length, get_num_unique(doc_id, c))
+        tf = result[0] if result else default_tf
         # if term is not in doc return score of 0
         # if tf == 0:
         #     return 0
@@ -47,7 +48,7 @@ def get_score(doc_id, terms, entities, total_docs, avg_length, max_idf):
         # get tf of the entity in the doc
         c.execute("select frequency from ents_tf where entity = :entity and doc_id = :doc_id;", {"entity": ent, "doc_id":doc_id})
         result = c.fetchone()
-        tf = result[0] if result else get_tf(0, doc_length, get_num_unique(doc_id, c))
+        tf = result[0] if result else default_tf
         # if term is not in doc return score of 0
         # if tf == 0:
         #     return 0
@@ -114,3 +115,23 @@ def get_num_unique(doc_id, c):
     c.execute("select count(distinct entity) from entities where doc_id = :doc_id;", {"doc_id": doc_id})
     num_unique += c.fetchone()[0]
     return num_unique
+
+def get_num_unique_dict(c):
+    c.execute(""" select count(distinct term), doc_id
+                    from terms
+                    group by doc_id;
+            """)
+    nu_dict = {}
+    for row in c:
+        nu_dict[row[1]] = row[0]
+
+    c.execute(""" select count(distinct entity), doc_id
+                    from entities
+                    group by doc_id;
+            """)   
+    for row in c:
+        try:
+            nu_dict[row[1]] += row[0]
+        except KeyError:
+            nu_dict[row[1]] = row[0]
+    return nu_dict

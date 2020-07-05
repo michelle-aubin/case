@@ -242,7 +242,7 @@ def insert_terms_idf(conn):
 
 # Inserts values into term_tf table
 # conn: connection to the database
-def insert_terms_tf(conn):
+def insert_terms_tf(conn, nu_dict):
     start = time.time()
     c = conn.cursor()
     c2 = conn.cursor()
@@ -268,7 +268,7 @@ def insert_terms_tf(conn):
         doc_id = row[1]
         count = row[2]
         doc_length = row[3]
-        num_unique = get_num_unique(doc_id, c2)
+        num_unique = nu_dict[doc_id]
         tf = get_tf(count, doc_length, num_unique)
         values = (term, doc_id, tf)
         c2.execute("insert into terms_tf values (?, ?, ?);", values)
@@ -326,8 +326,9 @@ def insert_ents_idf(conn):
 
 # Inserts values into ents_tf table
 # conn: connection to the database
-def insert_ents_tf(conn):
+def insert_ents_tf(conn, nu_dict):
     start = time.time()
+    print("Starting insert ents tf...")
     c = conn.cursor()
     c2 = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")
@@ -342,17 +343,20 @@ def insert_ents_tf(conn):
                     );
                     """)
 
+
+    select_time = time.time()
     c.execute(""" select e.entity, e.doc_id, count(*), d.length
                     from entities e, doc_lengths d
                     where e.doc_id = d.doc_id
                     group by e.entity, e.doc_id;
             """)
+    print("Getting raw count took %s seconds" % (time.time() - select_time))
     for row in c:
         entity = row[0]
         doc_id = row[1]
         count = row[2]
         doc_length = row[3]
-        num_unique = get_num_unique(doc_id, c2)
+        num_unique = nu_dict[doc_id]
         tf = get_tf(count, doc_length, num_unique)
         values = (entity, doc_id, tf)
         c2.execute("insert into ents_tf values (?, ?, ?);", values)
