@@ -9,15 +9,15 @@ from xml.dom import minidom
 
 # Returns a dictionary with doc ids as key and score of 0 as values
 # c: cursor for database
-def get_doc_ids(c):
-    with open("trec-covid/round3/docids-rnd3.txt", "r") as f_in:
-        rnd3_docs = {line.strip() for line in f_in}
+def get_doc_ids(c, docs_file):
+    with open(docs_file, "r") as f_in:
+        valid = {line.strip() for line in f_in}
     doc_scores = {}
     # all docs
     c.execute("select doc_id from doc_lengths;")
     for row in c:
         doc_id = row[0]
-        if doc_id in rnd3_docs:
+        if doc_id in valid:
             doc_scores[doc_id] = 0
 
     # only docs that are related to covid19
@@ -73,11 +73,13 @@ def get_terms_and_ents(query, nlp, stop_words):
     return terms, entities, splitted_terms, splitted_ents
 
 @plac.annotations(
-   input_file=("Input text file of queries", "positional", None, str),
+   input_file=("Input file of queries", "positional", None, str),
    output_file=("Output file", "positional", None, str), 
-   run_tag=("Tag representing the run", "positional", None, str)
+   run_tag=("Tag representing the run", "positional", None, str),
+   valid_docs=("Text file of valid doc ids to use", "positional", None, str)
+
 )
-def main(input_file, output_file, run_tag):
+def main(input_file, output_file, run_tag, valid_docs):
     conn = sqlite3.connect("cord19.db")
     c = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")
@@ -89,7 +91,7 @@ def main(input_file, output_file, run_tag):
     for row in c:
         stop_words.add(row[0])
 
-    doc_scores = get_doc_ids(c)
+    doc_scores = get_doc_ids(c, valid_docs)
     queries = get_queries(input_file)
     
     c.execute("select count(doc_id) from doc_lengths;")
