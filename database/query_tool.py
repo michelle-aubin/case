@@ -1,6 +1,6 @@
 import sqlite3
 import spacy
-from bm25 import get_score, get_idf
+from bm25 import get_score, get_idf, get_idfs
 import time
 from constants import URL
 # import csv
@@ -111,14 +111,15 @@ def main(input_file, output_file, run_tag, valid_docs):
     for tnum, query in enumerate(queries):
         tnum += 1
         terms, entities, splitted_terms, splitted_ents = get_terms_and_ents(query, nlp, stop_words)
+        idfs = get_idfs(terms, entities, splitted_terms, splitted_ents, c, max_idf)
 
         print("Getting scores...")
         start = time.time()
         for doc_id in doc_scores:
-            doc_scores[doc_id] = get_score(doc_id, terms, entities, total_docs, avg_length, max_idf)
+            doc_scores[doc_id] = get_score(doc_id, terms, entities, total_docs, avg_length, idfs)
             # if entities have been split, get score using the split version
             if terms != splitted_terms or entities != splitted_ents:
-                split_score = get_score(doc_id, splitted_terms, splitted_ents, total_docs, avg_length, max_idf)
+                split_score = get_score(doc_id, splitted_terms, splitted_ents, total_docs, avg_length, idfs)
                 # take max between split score and original score
                 if split_score > doc_scores[doc_id]:
                     doc_scores[doc_id] = split_score

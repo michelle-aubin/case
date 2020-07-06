@@ -8,7 +8,7 @@ from constants import BM25_B, BM25_K1, BM25_delta
 # terms: list of query terms that are not entities
 # entities: list of query terms that are entities
 # total_docs: num of docs in the corpus
-def get_score(doc_id, terms, entities, total_docs, avg_length, max_idf):
+def get_score(doc_id, terms, entities, total_docs, avg_length, idfs):
     conn = sqlite3.connect("cord19.db")
     c = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")
@@ -20,13 +20,7 @@ def get_score(doc_id, terms, entities, total_docs, avg_length, max_idf):
     score = 0
 
     for term in terms:
-        # get idf of the term
-        c.execute("select idf, idf2 from terms_idf where term = :term;", {"term": term})
-        result = c.fetchone()
-        idf1 = result[0] if result else 0
-        idf2 = result[1] if result else 0
-        # get geometric mean
-        idf = get_geometric_mean(idf1, idf2, max_idf)
+        idf = idfs[term]
         # get tf of the term in the doc
         c.execute("select frequency from terms_tf where term = :term and doc_id = :doc_id;", {"term": term, "doc_id":doc_id})
         result = c.fetchone()
@@ -37,13 +31,7 @@ def get_score(doc_id, terms, entities, total_docs, avg_length, max_idf):
         # calculate score
         score += calc_summand(tf, idf, doc_length, avg_length)
     for ent in entities:
-        # get idf of the entity
-        c.execute("select idf, idf2 from ents_idf where entity = :entity;", {"entity": ent})
-        result = c.fetchone()
-        idf1 = result[0] if result else 0
-        idf2 = result[1] if result else 0
-        # get geometric mean
-        idf = get_geometric_mean(idf1, idf2, max_idf)
+        idf = idfs[ent]
         # get tf of the entity in the doc
         c.execute("select frequency from ents_tf where entity = :entity and doc_id = :doc_id;", {"entity": ent, "doc_id":doc_id})
         result = c.fetchone()
@@ -94,3 +82,45 @@ def get_geometric_mean(idf1, idf2, max_idf):
 def normalize_idf(idf, max_idf):
     # 13.999 is max idf in en-idf.txt
     return (idf / 14) * max_idf
+
+# Returns a dictionary of the query terms and their idfs
+def get_idfs(terms, entities, splitted_terms, splitted_ents, c, max_idf):
+    idfs = {}
+    for term1, term2 in zip(terms, splitted_terms):
+        # get idf of the term
+        c.execute("select idf, idf2 from terms_idf where term = :term;", {"term": term1})
+        result = c.fetchone()
+        idf1 = result[0] if result else 0
+        idf2 = result[1] if result else 0
+        # get geometric mean
+        idf = get_geometric_mean(idf1, idf2, max_idf)
+        idfs[term1] = idf
+        # has splitted
+        if term1 != term2:
+            c.execute("select idf, idf2 from terms_idf where term = :term;", {"term": term2})
+            result = c.fetchone()
+            idf1 = result[0] if result else 0
+            idf2 = result[1] if result else 0
+            # get geometric mean
+            idf = get_geometric_mean(idf1, idf2, max_idf)
+            idfs[term2] = idf
+    for ent1, ent2 in zip(entities, splitted_ents):
+        # get idf of the entity
+        c.execute("select idf, idf2 from ents_idf where entity = :entity;", {"entity": ent1})
+        result = c.fetchone()
+        idf1 = result[0] if result else 0
+        idf2 = result[1] if result else 0
+        # get geometric mean
+        idf = get_geometric_mean(idf1, idf2, max_idf)
+        idfs[ent1] = idf
+        # has splitted
+        if ent1 != ent2:
+            # get idf of the entity
+            c.execute("select idf, idf2 from ents_idf where entity = :entity;", {"entity": ent2})
+            result = c.fetchone()
+            idf1 = result[0] if result else 0
+            idf2 = result[1] if result else 0
+            # get geometric mean
+            idf = get_geometric_mean(idf1, idf2, max_idf)
+            idfs[ent2] = idf
+    return idfs
