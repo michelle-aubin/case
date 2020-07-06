@@ -83,41 +83,23 @@ def normalize_idf(idf, max_idf):
 # Returns a dictionary of the query terms and their idfs
 def get_idfs(terms, entities, splitted_terms, splitted_ents, c, max_idf):
     idfs = {}
-    for term1, term2 in zip(terms, splitted_terms):
+    for term in (set(terms) | set(splitted_terms)):
         # get idf of the term
-        c.execute("select idf, idf2 from terms_idf where term = :term;", {"term": term1})
+        c.execute("select idf, idf2 from terms_idf where term = :term;", {"term": term})
         result = c.fetchone()
         idf1 = result[0] if result else 0
         idf2 = result[1] if result else 0
         # get geometric mean
         idf = get_geometric_mean(idf1, idf2, max_idf)
-        idfs[term1] = idf
-        # has splitted
-        if term1 != term2:
-            c.execute("select idf, idf2 from terms_idf where term = :term;", {"term": term2})
-            result = c.fetchone()
-            idf1 = result[0] if result else 0
-            idf2 = result[1] if result else 0
-            # get geometric mean
-            idf = get_geometric_mean(idf1, idf2, max_idf)
-            idfs[term2] = idf
-    for ent1, ent2 in zip(entities, splitted_ents):
+        idfs[term] = idf
+    for ent in (set(entities) | set(splitted_ents)):
         # get idf of the entity
-        c.execute("select idf, idf2 from ents_idf where entity = :entity;", {"entity": ent1})
+        c.execute("select idf, idf2 from ents_idf where entity = :entity;", {"entity": ent})
         result = c.fetchone()
         idf1 = result[0] if result else 0
         idf2 = result[1] if result else 0
         # get geometric mean
         idf = get_geometric_mean(idf1, idf2, max_idf)
-        idfs[ent1] = idf
-        # has splitted
-        if ent1 != ent2:
-            # get idf of the entity
-            c.execute("select idf, idf2 from ents_idf where entity = :entity;", {"entity": ent2})
-            result = c.fetchone()
-            idf1 = result[0] if result else 0
-            idf2 = result[1] if result else 0
-            # get geometric mean
-            idf = get_geometric_mean(idf1, idf2, max_idf)
-            idfs[ent2] = idf
+        idfs[ent] = idf
+    
     return idfs
