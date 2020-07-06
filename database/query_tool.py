@@ -76,11 +76,11 @@ def get_terms_and_ents(query, nlp, stop_words):
    input_file=("Input file of queries", "positional", None, str),
    output_file=("Output file", "positional", None, str), 
    run_tag=("Tag representing the run", "positional", None, str),
-   valid_docs=("Text file of valid doc ids to use", "positional", None, str)
-
+   valid_docs=("Text file of valid doc ids to use", "positional", None, str),
+   db_name=("Database name", "positional", None, str)
 )
-def main(input_file, output_file, run_tag, valid_docs):
-    conn = sqlite3.connect("cord19.db")
+def main(input_file, output_file, run_tag, valid_docs, db_name):
+    conn = sqlite3.connect(db_name)
     c = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")
     conn.commit()
@@ -116,10 +116,10 @@ def main(input_file, output_file, run_tag, valid_docs):
         print("Getting scores...")
         start = time.time()
         for doc_id in doc_scores:
-            doc_scores[doc_id] = get_score(doc_id, terms, entities, total_docs, avg_length, idfs)
+            doc_scores[doc_id] = get_score(doc_id, terms, entities, total_docs, avg_length, idfs, c)
             # if entities have been split, get score using the split version
             if terms != splitted_terms or entities != splitted_ents:
-                split_score = get_score(doc_id, splitted_terms, splitted_ents, total_docs, avg_length, idfs)
+                split_score = get_score(doc_id, splitted_terms, splitted_ents, total_docs, avg_length, idfs, c)
                 # take max between split score and original score
                 if split_score > doc_scores[doc_id]:
                     doc_scores[doc_id] = split_score
