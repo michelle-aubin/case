@@ -86,24 +86,23 @@ def main(input_file, output_file, run_tag, valid_docs):
     conn.commit()
 
     print("Gathering some data...")
+    # get stop words
     stop_words = set()
     c.execute("select word from stop_words;")
     for row in c:
         stop_words.add(row[0])
 
+    # get valid docs to include in ranking
     doc_scores = get_doc_ids(c, valid_docs)
+    # get queries from input file
     queries = get_queries(input_file)
-    
+    # get total num of docs
     c.execute("select count(doc_id) from doc_lengths;")
     total_docs = c.fetchone()[0]
-
-    avg_length = 0
-    for doc in doc_scores:
-        c.execute("select length from doc_lengths where doc_id = :doc_id", {"doc_id": doc})
-        length = c.fetchone()[0]
-        avg_length += length
-    avg_length = avg_length / total_docs
-
+    # get average doc length
+    c.execute("select avg(length) from doc_lengths;")
+    avg_length = c.fetchone()[0]
+    # get max idf for normalizing idfs from en-idf.txt
     max_idf = get_idf(1, total_docs)
 
     print("Loading model...")
