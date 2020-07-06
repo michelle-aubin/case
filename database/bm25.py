@@ -14,8 +14,8 @@ def get_score(doc_id, terms, entities, total_docs, avg_length, idfs, c):
     c.execute("select length from doc_lengths where doc_id = :doc_id;", {"doc_id":doc_id})
     doc_length = c.fetchone()[0]
     # remove docs that are smaller than 25 words
-    if doc_length < 25:
-        return 0
+    # if doc_length < 25:
+    #     return 0
     score = 0
     for term in terms:
         idf = idfs[term]
