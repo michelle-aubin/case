@@ -46,6 +46,8 @@ def get_terms_and_ents(query, nlp, stop_words):
     doc = nlp(query)
     print("Entities found:")
     for ent in doc.ents:
+        if ent.label_ == "CORONAVIRUS":
+            found_covid = True
         print("\t%s" % ent.text)
         entities.append(ent.text.lower())
         words = ent.text.split(" ")
@@ -91,6 +93,13 @@ def main(input_file, output_file, run_tag, valid_docs, db_name):
     c.execute("select word from stop_words;")
     for row in c:
         stop_words.add(row[0])
+    
+    # get coronavirus synonyms
+    covid_synonyms = []
+    c.execute("select distinct(entity) from entities where type = \"CORONAVIRUS\";")
+    for row in c:
+        # do not split multiword entities, just keep as one
+        covid_synonyms.append(row[0])
 
     # get valid docs to include in ranking
     doc_scores = get_doc_ids(c, valid_docs)
@@ -111,6 +120,14 @@ def main(input_file, output_file, run_tag, valid_docs, db_name):
     for tnum, query in enumerate(queries):
         tnum += 1
         terms, entities, splitted_terms, splitted_ents = get_terms_and_ents(query, nlp, stop_words)
+        # add coronavirus synonyms if a query term is a coronavirus synonym
+        for ent in entities:
+            if ent in covid_synonyms:
+                # doesn't split multiword coronavirus synonyms into individual words
+                entities.extend(covid_synonyms)
+                splitted_ents.extend(covid_synonyms)
+                break
+
         idfs = get_idfs(terms, entities, splitted_terms, splitted_ents, c, max_idf)
 
         print("Getting scores...")
