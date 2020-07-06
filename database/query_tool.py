@@ -95,11 +95,7 @@ def main(input_file, output_file, run_tag, valid_docs, db_name):
         stop_words.add(row[0])
     
     # get coronavirus synonyms
-    covid_synonyms = []
-    c.execute("select distinct(entity) from entities where type = \"CORONAVIRUS\";")
-    for row in c:
-        # do not split multiword entities, just keep as one
-        covid_synonyms.append(row[0])
+    covid_synonyms = ['coronavirus', 'covid-19', 'covid 19', 'sars-cov-2']
 
     # get valid docs to include in ranking
     doc_scores = get_doc_ids(c, valid_docs)
@@ -123,6 +119,7 @@ def main(input_file, output_file, run_tag, valid_docs, db_name):
         # add coronavirus synonyms if a query term is a coronavirus synonym
         for ent in entities:
             if ent in covid_synonyms:
+                covid_synonyms.remove(ent)
                 # doesn't split multiword coronavirus synonyms into individual words
                 entities.extend(covid_synonyms)
                 splitted_ents.extend(covid_synonyms)
