@@ -34,7 +34,11 @@ def get_queries(input_file):
     xml_doc = minidom.parse(input_file)
     topics = xml_doc.getElementsByTagName('topic')
     for topic in topics:
-        queries.append(topic.getElementsByTagName('query')[0].childNodes[0].data)
+        query = topic.getElementsByTagName('query')[0].childNodes[0].data
+        question = topic.getElementsByTagName('question')[0].childNodes[0].data
+        narrative = topic.getElementsByTagName('narrative')[0].childNodes[0].data
+        full = ". ".join([query, question, narrative])
+        queries.append(full)
     return queries
 
 # Returns lists of terms and entities given a query
@@ -93,13 +97,6 @@ def main(input_file, output_file, run_tag, valid_docs, db_name):
     c.execute("select word from stop_words;")
     for row in c:
         stop_words.add(row[0])
-    
-    # get coronavirus synonyms
-    covid_synonyms = []
-    c.execute("select distinct(entity) from entities where type = \"CORONAVIRUS\";")
-    for row in c:
-        # do not split multiword entities, just keep as one
-        covid_synonyms.append(row[0])
 
     # get valid docs to include in ranking
     doc_scores = get_doc_ids(c, valid_docs)
@@ -120,28 +117,17 @@ def main(input_file, output_file, run_tag, valid_docs, db_name):
     for tnum, query in enumerate(queries):
         tnum += 1
         terms, entities, splitted_terms, splitted_ents = get_terms_and_ents(query, nlp, stop_words)
-        # add coronavirus synonyms if a query term is a coronavirus synonym
-        for ent in entities:
-            if ent in covid_synonyms:
-                covid_synonyms.remove(ent)
-                # doesn't split multiword coronavirus synonyms into individual words
-                entities.extend(covid_synonyms)
-                splitted_ents.extend(covid_synonyms)
-                covid_synonyms.append(ent)
-                break
-
         idfs = get_idfs(terms, entities, splitted_terms, splitted_ents, c, max_idf)
-
         print("Getting scores...")
         start = time.time()
         for doc_id in doc_scores:
             doc_scores[doc_id] = get_score(doc_id, terms, entities, total_docs, avg_length, idfs, c)
-            # if entities have been split, get score using the split version
-            if terms != splitted_terms or entities != splitted_ents:
-                split_score = get_score(doc_id, splitted_terms, splitted_ents, total_docs, avg_length, idfs, c)
-                # take max between split score and original score
-                if split_score > doc_scores[doc_id]:
-                    doc_scores[doc_id] = split_score
+            # # if entities have been split, get score using the split version
+            # if terms != splitted_terms or entities != splitted_ents:
+            #     split_score = get_score(doc_id, splitted_terms, splitted_ents, total_docs, avg_length, idfs, c)
+            #     # take max between split score and original score
+            #     if split_score > doc_scores[doc_id]:
+            #         doc_scores[doc_id] = split_score
 
         print("Took %.2f seconds to get scores" % (time.time() - start))
         i = 0
