@@ -7,7 +7,7 @@ AVG_DOC_LENGTH = 4434
 
 # parameters for BM25 ranking function
 BM25_B = 0.1
-BM25_K1 = 0.6
+BM25_K1 = 0.1
 BM25_delta = 1
 
 
