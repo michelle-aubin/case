@@ -98,6 +98,7 @@ def main(input_file, output_file, run_tag, valid_docs, db_name):
             prox_score = get_max_prox_score(spans, terms_set)
             bm25_score = get_score(doc_id, terms, total_docs, avg_length, idfs, c)
             doc_scores[doc_id] = PROX_R * bm25_score + (1-PROX_R) * prox_score
+            return
 
         print("Took %.2f seconds to get scores" % (time.time() - start))
         i = 0

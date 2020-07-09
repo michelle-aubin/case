@@ -14,6 +14,8 @@ def get_spans(doc_id, query_terms, c):
         doc_terms.append(row[0])
     # get ordered chain of query term hits
     chain_of_hits = get_chain_of_hits(query_terms, doc_terms)
+    print(doc_terms)
+    print(chain_of_hits)
     # get spans
     return detect_spans(chain_of_hits, query_terms, doc_terms)
 
@@ -99,7 +101,6 @@ def save_span(start_node, end_node, doc_terms):
     span = []
     start_pos = start_node[0]
     end_pos = end_node[0]
-    print("Saving span from", start_node, " to ", end_node)
     # span contains just one query term, will be of length k with no query end term
     if start_pos == end_pos:
         for i in range(start_pos, start_pos + PROX_K):
@@ -133,8 +134,8 @@ def find_repeated_node(current, search_node, start, chain_of_hits):
 # query_terms: set of query terms
 def get_max_prox_score(spans, query_terms):
     max_score = -1
-    for span in span:
-        score = get_prox_score(span)
+    for span in spans:
+        score = get_prox_score(span, query_terms)
         if score > max_score:
             max_score = score
     return max_score
@@ -144,7 +145,7 @@ def get_max_prox_score(spans, query_terms):
 # query_terms: set of query terms
 def get_prox_score(span, query_terms):
     # num of different query terms in the span
-    num_qts_unique = query_terms & set(span)
+    num_qts_unique = len(query_terms & set(span))
     # num of query terms
     num_qts_total = len(query_terms)
     # num of terms in the span
