@@ -14,8 +14,8 @@ def get_spans(doc_id, query_terms, c):
         doc_terms.append(row[0])
     # get ordered chain of query term hits
     chain_of_hits = get_chain_of_hits(query_terms, doc_terms)
-    print(doc_terms)
-    print(chain_of_hits)
+ #   print(doc_terms)
+ #   print(chain_of_hits)
     # get spans
     return detect_spans(chain_of_hits, query_terms, doc_terms)
 
@@ -101,6 +101,7 @@ def save_span(start_node, end_node, doc_terms):
     span = []
     start_pos = start_node[0]
     end_pos = end_node[0]
+   # print("Span from ", start_node, " to ", end_node)
     # span contains just one query term, will be of length k with no query end term
     if start_pos == end_pos:
         for i in range(start_pos, start_pos + PROX_K):
