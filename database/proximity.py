@@ -127,3 +127,26 @@ def find_repeated_node(current, search_node, start, chain_of_hits):
         return repeated_node;
     else:
         return None
+
+# Returns the max proximity score for a document
+# spans: spans representin the document
+# query_terms: set of query terms
+def get_max_prox_score(spans, query_terms):
+    max_score = -1
+    for span in span:
+        score = get_prox_score(span)
+        if score > max_score:
+            max_score = score
+    return max_score
+
+# Returns the proximity score of a span
+# span: the span
+# query_terms: set of query terms
+def get_prox_score(span, query_terms):
+    # num of different query terms in the span
+    num_qts_unique = query_terms & set(span)
+    # num of query terms
+    num_qts_total = len(query_terms)
+    # num of terms in the span
+    num_terms_total = len(span)
+    return (num_qts_unique / num_qts_total) * (num_qts_unique / num_terms_total)

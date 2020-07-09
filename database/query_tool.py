@@ -2,10 +2,10 @@ import sqlite3
 import spacy
 from bm25 import get_score, get_idf, get_idfs
 import time
-from constants import URL
-# import csv
+from constants import PROX_R
 import plac
 from xml.dom import minidom
+from proximity import get_spans, get_max_prox_score
 
 # Returns a dictionary with doc ids as key and score of 0 as values
 # c: cursor for database
@@ -116,7 +116,11 @@ def main(input_file, output_file, run_tag, valid_docs, db_name):
         print("Getting scores...")
         start = time.time()
         for doc_id in doc_scores:
-            doc_scores[doc_id] = get_score(doc_id, terms, entities, total_docs, avg_length, idfs, c)
+            terms_set = set(terms)
+            spans = get_spans(doc_id, terms, c)
+            prox_score = get_max_prox_score(spans, terms_set)
+            bm25_score = get_score(doc_id, terms, entities, total_docs, avg_length, idfs, c)
+            doc_scores[doc_id] = PROX_R * bm25_score + (1-PROX_R) * prox_score
             # if entities have been split, get score using the split version
             if terms != splitted_terms or entities != splitted_ents:
                 split_score = get_score(doc_id, splitted_terms, splitted_ents, total_docs, avg_length, idfs, c)
