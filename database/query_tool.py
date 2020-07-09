@@ -37,40 +37,17 @@ def get_queries(input_file):
         queries.append(topic.getElementsByTagName('query')[0].childNodes[0].data)
     return queries
 
-# Returns lists of terms and entities given a query
-def get_terms_and_ents(query, nlp, stop_words):
+# Returns lists of terms given a query
+def get_terms(query, nlp, stop_words):
     terms = []
-    entities = []
-    splitted_terms = []
-    splitted_ents = []
     doc = nlp(query)
-    print("Entities found:")
-    for ent in doc.ents:
-        print("\t%s" % ent.text)
-        entities.append(ent.text.lower())
-        words = ent.text.split(" ")
-        # entity is more than 1 word so split it
-        if len(words) > 1:
-            for word in words:
-                word_doc = nlp(word)
-                # word is a term
-                if len(word_doc.ents) == 0:
-                    splitted_terms.append(word_doc[0].text.lower())
-                # word is an entity
-                else:
-                    splitted_ents.append(word_doc[0].text.lower())
-        else:
-            splitted_ents.append(ent.text.lower())
-
     print("Terms found:")
     for token in doc:
-        # if token is a non entity and not a punct and not a stop word
-        if token.ent_iob == 2 and not token.is_punct and token.text.lower() not in stop_words:
+        # if token is not a punct and not a stop word
+        if not token.is_punct and token.text.lower() not in stop_words:
             print("\t%s" % token.text)
             terms.append(token.text.lower())
-            splitted_terms.append(token.text.lower())
-    # return original terms and ents, and splitted
-    return terms, entities, splitted_terms, splitted_ents
+    return terms
 
 @plac.annotations(
    input_file=("Input file of queries", "positional", None, str),
@@ -106,12 +83,12 @@ def main(input_file, output_file, run_tag, valid_docs, db_name):
     max_idf = get_idf(1, total_docs)
 
     print("Loading model...")
-    nlp = spacy.load("../custom_model3")
+    nlp = spacy.load("../custom_model3", disable=['bc5cdr_ner', 'bionlp13cg_ner', 'entity_ruler', 'web_ner'])
 
     for tnum, query in enumerate(queries):
         tnum += 1
-        terms, entities, splitted_terms, splitted_ents = get_terms_and_ents(query, nlp, stop_words)
-        idfs = get_idfs(terms, entities, splitted_terms, splitted_ents, c, max_idf)
+        terms = get_terms(query, nlp, stop_words)
+        idfs = get_idfs(terms, c, max_idf)
 
         print("Getting scores...")
         start = time.time()
@@ -119,14 +96,8 @@ def main(input_file, output_file, run_tag, valid_docs, db_name):
             terms_set = set(terms)
             spans = get_spans(doc_id, terms, c)
             prox_score = get_max_prox_score(spans, terms_set)
-            bm25_score = get_score(doc_id, terms, entities, total_docs, avg_length, idfs, c)
+            bm25_score = get_score(doc_id, terms, total_docs, avg_length, idfs, c)
             doc_scores[doc_id] = PROX_R * bm25_score + (1-PROX_R) * prox_score
-            # if entities have been split, get score using the split version
-            if terms != splitted_terms or entities != splitted_ents:
-                split_score = get_score(doc_id, splitted_terms, splitted_ents, total_docs, avg_length, idfs, c)
-                # take max between split score and original score
-                if split_score > doc_scores[doc_id]:
-                    doc_scores[doc_id] = split_score
 
         print("Took %.2f seconds to get scores" % (time.time() - start))
         i = 0

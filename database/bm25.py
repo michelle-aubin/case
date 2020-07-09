@@ -10,7 +10,7 @@ from constants import BM25_B, BM25_K1, BM25_delta
 # total_docs: num of docs in the corpus
 # idfs: dictionary of terms and idf values
 # c: database cursor
-def get_score(doc_id, terms, entities, total_docs, avg_length, idfs, c):
+def get_score(doc_id, terms, total_docs, avg_length, idfs, c):
     c.execute("select length from doc_lengths where doc_id = :doc_id;", {"doc_id":doc_id})
     doc_length = c.fetchone()[0]
     score = 0
@@ -18,17 +18,6 @@ def get_score(doc_id, terms, entities, total_docs, avg_length, idfs, c):
         idf = idfs[term]
         # get tf of the term in the doc
         c.execute("select frequency from terms_tf where term = :term and doc_id = :doc_id;", {"term": term, "doc_id":doc_id})
-        result = c.fetchone()
-        tf = result[0] if result else 0
-        # if term is not in doc return score of 0
-        if tf == 0:
-            return 0
-        # calculate score
-        score += calc_summand(tf, idf, doc_length, avg_length)
-    for ent in entities:
-        idf = idfs[ent]
-        # get tf of the entity in the doc
-        c.execute("select frequency from ents_tf where entity = :entity and doc_id = :doc_id;", {"entity": ent, "doc_id":doc_id})
         result = c.fetchone()
         tf = result[0] if result else 0
         # if term is not in doc return score of 0
@@ -78,9 +67,9 @@ def normalize_idf(idf, max_idf):
     return (idf / 14) * max_idf
 
 # Returns a dictionary of the query terms and their idfs
-def get_idfs(terms, entities, splitted_terms, splitted_ents, c, max_idf):
+def get_idfs(terms, c, max_idf):
     idfs = {}
-    for term in (set(terms) | set(splitted_terms)):
+    for term in (set(terms)):
         # get idf of the term
         c.execute("select idf, idf2 from terms_idf where term = :term;", {"term": term})
         result = c.fetchone()
@@ -89,14 +78,4 @@ def get_idfs(terms, entities, splitted_terms, splitted_ents, c, max_idf):
         # get geometric mean
         idf = get_geometric_mean(idf1, idf2, max_idf)
         idfs[term] = idf
-    for ent in (set(entities) | set(splitted_ents)):
-        # get idf of the entity
-        c.execute("select idf, idf2 from ents_idf where entity = :entity;", {"entity": ent})
-        result = c.fetchone()
-        idf1 = result[0] if result else 0
-        idf2 = result[1] if result else 0
-        # get geometric mean
-        idf = get_geometric_mean(idf1, idf2, max_idf)
-        idfs[ent] = idf
-    
     return idfs
