@@ -1,32 +1,12 @@
 import sqlite3
 import spacy
-from bm25 import get_score, get_idf, get_idfs
+from bm25 import get_idf, get_idfs, calc_summand
 import time
 from constants import PROX_R
 import plac
 from xml.dom import minidom
 from proximity import get_spans, get_max_prox_score
-
-# Returns a dictionary with doc ids as key and score of 0 as values
-# c: cursor for database
-def get_doc_ids(c, docs_file):
-    with open(docs_file, "r") as f_in:
-        valid = {line.strip() for line in f_in}
-    doc_scores = {}
-    # all docs
-    c.execute("select doc_id from doc_lengths;")
-    for row in c:
-        doc_id = row[0]
-        if doc_id in valid:
-            doc_scores[doc_id] = 0
-
-    # only docs that are related to covid19
-    # c.execute("select distinct doc_id from entities where type = \"CORONAVIRUS\";")
-    # for row in c:
-    #     doc_id = row[0]
-    #     doc_scores[doc_id] = 0
-
-    return doc_scores
+import heapq as hq
 
 # Returns a list of queries
 def get_queries(input_file):
@@ -39,73 +19,47 @@ def get_queries(input_file):
 
 # Returns lists of terms given a query
 def get_terms(query, nlp, stop_words):
-    terms = []
+    terms = set()
     doc = nlp(query)
     print("Terms found:")
     for token in doc:
         # if token is not a punct and not a stop word
         if not token.is_punct and token.text.lower() not in stop_words:
             print("\t%s" % token.text)
-            terms.append(token.text.lower())
-    return terms
+            terms.add(token.text.lower())
+    return list(terms)
 
 # Returns a dictionary with terms as keys and sorted lists of (doc id, term frequency) tuples as values
 # terms: query terms
 # c: cursor for database
-# idfs: dictionary of terms as key and idfs as value, used to sort posting lists by increasing length
-def get_posting_lists(terms, c, idfs):
+def get_posting_lists(terms, c):
     posting_lists = {}
+    doc_sets = {}
     for term in terms:
-        if term in posting_lists:
-            continue
         # gets list of (doc id, frequency) tuples sorted by doc id
         c.execute("select doc_id, frequency from terms_tf where term = :term;", {"term": term})
         posting_lists[term] = c.fetchall()
+        # get set of docs for each term
+        doc_sets[term] = {tup[0] for tup in posting_lists[term]}
     if len(terms) == 1:
         return posting_lists
-    # sort posting lists by increasing length for faster intersection 
-    sorted_terms = []
-    for term, idf in sorted(idfs.items(), key=lambda item: item[1], reverse=True):
-        sorted_terms.append(term)
     # only keep docs that have all of the terms
-    for i in range(1, len(sorted_terms)):
-        term1 = sorted_terms[i-1]
-        term2 = sorted_terms[i]
-        posting_lists[term1], posting_lists[term2] = intersect(posting_lists[term1], posting_lists[term2])
+    intersect_docs = set.intersection(*doc_sets.values())
+    for term in terms:
+        new_list = []
+        for tup in posting_lists[term]:
+            if tup[0] in intersect_docs:
+                new_list.append(tup)
+        posting_lists[term] = new_list
     return posting_lists
-
-
-# Returns lists p1 and p2 with only doc ids that are in the intersection of the original p1 and p2 
-# p1 and p2: list of (doc id, term frequency) tuples sorted by doc id 
-def intersect(p1, p2):
-    # instead of returning a list return the original lists, but have the non intersects removed
-    i = 0
-    j = 0
-    new_p1 = []
-    new_p2 = []
-    while i < len(p1) and j < len(p2):
-        doc1 = p1[i][0]
-        doc2 = p2[j][0]
-        if doc1 == doc2:
-            new_p1.append(p1[i])
-            new_p2.append(p2[j])
-            i += 1
-            j += 1
-        elif doc1 < doc2:
-            i += 1
-        else:
-            j += 1
-    return new_p1, new_p2
-
 
 @plac.annotations(
    input_file=("Input file of queries", "positional", None, str),
    output_file=("Output file", "positional", None, str), 
    run_tag=("Tag representing the run", "positional", None, str),
-   valid_docs=("Text file of valid doc ids to use", "positional", None, str),
    db_name=("Database name", "positional", None, str)
 )
-def main(input_file, output_file, run_tag, valid_docs, db_name):
+def main(input_file, output_file, run_tag, db_name):
     conn = sqlite3.connect(db_name)
     c = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")
@@ -118,8 +72,6 @@ def main(input_file, output_file, run_tag, valid_docs, db_name):
     for row in c:
         stop_words.add(row[0])
 
-    # get valid docs to include in ranking
-    doc_scores = get_doc_ids(c, valid_docs)
     # get queries from input file
     queries = get_queries(input_file)
     # get total num of docs
@@ -130,6 +82,7 @@ def main(input_file, output_file, run_tag, valid_docs, db_name):
     avg_length = c.fetchone()[0]
     # get max idf for normalizing idfs from en-idf.txt
     max_idf = get_idf(1, total_docs)
+    doc_scores = []
 
     print("Loading model...")
     nlp = spacy.load("../custom_model3", disable=['bc5cdr_ner', 'bionlp13cg_ner', 'entity_ruler', 'web_ner'])
@@ -137,45 +90,45 @@ def main(input_file, output_file, run_tag, valid_docs, db_name):
     for tnum, query in enumerate(queries):
         print("Getting scores...")
         start = time.time()
-
         tnum += 1
-        terms = ["animal", "models", "covid-19"] #terms = get_terms(query, nlp, stop_words)
+        terms = get_terms(query, nlp, stop_words)
         idfs = get_idfs(terms, c, max_idf)
-        st_time = time.time()
-        posting_lists = get_posting_lists(terms, c, idfs)
-        print("getting intersection and posting lists took %s seconds" % (time.time() - st_time))
-        c.execute("""select doc_id from terms_tf where term = \"animal\"
-                    intersect
-                    select doc_id from terms_tf where term = \"models\"
-                    intersect
-                    select doc_id from terms_tf where term = \"covid-19\";
-                    """)
-        db_res = c.fetchall()
-        res = set()
-        for tup in db_res:
-            res.add(tup[0])
-        for term, plist in posting_lists.items():
-            pset = set()
-            for tup in plist:
-                pset.add(tup[0])
-            print("diff between sets", res - pset)
-        return
+        posting_lists = get_posting_lists(terms, c)
 
-        for doc_id in doc_scores:
-            bm25_score = get_score(doc_id, terms, total_docs, avg_length, idfs, c)
-            if bm25_score > 0:
-                terms_set = set(terms)
-                spans = get_spans(doc_id, terms, c)
-                prox_score = get_max_prox_score(spans, terms_set)
-                doc_scores[doc_id] = PROX_R * bm25_score + (1-PROX_R) * prox_score
+        # traverse the posting lists at the same time to get bm25 score
+        for i in range(len(posting_lists[terms[0]])):
+            score = 0
+            for term, plist in posting_lists.items():
+                tf = plist[i][1]
+                idf = idfs[term]
+                doc_id = plist[i][0]
+                c.execute("select length from doc_lengths where doc_id = :doc_id;", {"doc_id":doc_id})
+                doc_length = c.fetchone()[0]
+                score += calc_summand(tf, idf, doc_length, avg_length)
+            # make 100 a parameter
+            if len(doc_scores) < 100:
+                hq.heappush(doc_scores, (score, doc_id))
+            else:
+                if score > doc_scores[0][0]:
+                    hq.heappushpop(doc_scores, (score, doc_id))
             
+        # get proximity score
+        for doc_id in doc_scores:
+            spans = get_spans(doc_id, terms, c)
+            prox_score = get_max_prox_score(spans, set(terms))
+            doc_scores[doc_id] = PROX_R * bm25_score + (1-PROX_R) * prox_score
+
+        # sort in descending order of score
+        doc_scores = hq.nlargest(len(doc_scores), doc_scores)
 
         print("Took %.2f seconds to get scores" % (time.time() - start))
         i = 0
         with open(output_file, "a") as f_out:
-            for doc, score in sorted(doc_scores.items(), key=lambda item: item[1], reverse=True):
+            for tup in doc_scores:
+                doc = tup[1]
+                score = tup[0]
                 # return max 1000 docs
-                if i >= 1000 or score == 0:
+                if i >= 1000 or not doc_scores:
                     # no docs returned
                     if i == 0:
                         # make dummy list
