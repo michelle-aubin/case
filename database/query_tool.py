@@ -49,6 +49,55 @@ def get_terms(query, nlp, stop_words):
             terms.append(token.text.lower())
     return terms
 
+# Returns a dictionary with terms as keys and sorted lists of (doc id, term frequency) tuples as values
+# terms: query terms
+# c: cursor for database
+# idfs: dictionary of terms as key and idfs as value, used to sort posting lists by increasing length
+def get_posting_lists(terms, c, idfs):
+    posting_lists = {}
+    for term in terms:
+        if term in posting_lists:
+            continue
+        # gets list of (doc id, frequency) tuples sorted by doc id
+        c.execute("select doc_id, frequency from terms_tf where term = :term;", {"term": term})
+        posting_lists[term] = c.fetchall()
+    if len(terms) == 1:
+        return posting_lists
+    # sort posting lists by increasing length for faster intersection 
+    sorted_terms = []
+    for term, idf in sorted(idfs.items(), key=lambda item: item[1], reverse=True):
+        sorted_terms.append(term)
+    # only keep docs that have all of the terms
+    for i in range(1, len(sorted_terms)):
+        term1 = sorted_terms[i-1]
+        term2 = sorted_terms[i]
+        posting_lists[term1], posting_lists[term2] = intersect(posting_lists[term1], posting_lists[term2])
+    return posting_lists
+
+
+# Returns lists p1 and p2 with only doc ids that are in the intersection of the original p1 and p2 
+# p1 and p2: list of (doc id, term frequency) tuples sorted by doc id 
+def intersect(p1, p2):
+    # instead of returning a list return the original lists, but have the non intersects removed
+    i = 0
+    j = 0
+    new_p1 = []
+    new_p2 = []
+    while i < len(p1) and j < len(p2):
+        doc1 = p1[i][0]
+        doc2 = p2[j][0]
+        if doc1 == doc2:
+            new_p1.append(p1[i])
+            new_p2.append(p2[j])
+            i += 1
+            j += 1
+        elif doc1 < doc2:
+            i += 1
+        else:
+            j += 1
+    return new_p1, new_p2
+
+
 @plac.annotations(
    input_file=("Input file of queries", "positional", None, str),
    output_file=("Output file", "positional", None, str), 
@@ -86,17 +135,37 @@ def main(input_file, output_file, run_tag, valid_docs, db_name):
     nlp = spacy.load("../custom_model3", disable=['bc5cdr_ner', 'bionlp13cg_ner', 'entity_ruler', 'web_ner'])
 
     for tnum, query in enumerate(queries):
-        tnum += 1
-        terms = get_terms(query, nlp, stop_words)
-        idfs = get_idfs(terms, c, max_idf)
-
         print("Getting scores...")
         start = time.time()
+
+        tnum += 1
+        terms = ["animal", "models", "covid-19"] #terms = get_terms(query, nlp, stop_words)
+        idfs = get_idfs(terms, c, max_idf)
+        st_time = time.time()
+        posting_lists = get_posting_lists(terms, c, idfs)
+        print("getting intersection and posting lists took %s seconds" % (time.time() - st_time))
+        c.execute("""select doc_id from terms_tf where term = \"animal\"
+                    intersect
+                    select doc_id from terms_tf where term = \"models\"
+                    intersect
+                    select doc_id from terms_tf where term = \"covid-19\";
+                    """)
+        db_res = c.fetchall()
+        res = set()
+        for tup in db_res:
+            res.add(tup[0])
+        for term, plist in posting_lists.items():
+            pset = set()
+            for tup in plist:
+                pset.add(tup[0])
+            print("diff between sets", res - pset)
+        return
+
         for doc_id in doc_scores:
-            terms_set = set(terms)
-            spans = get_spans(doc_id, terms, c)
             bm25_score = get_score(doc_id, terms, total_docs, avg_length, idfs, c)
             if bm25_score > 0:
+                terms_set = set(terms)
+                spans = get_spans(doc_id, terms, c)
                 prox_score = get_max_prox_score(spans, terms_set)
                 doc_scores[doc_id] = PROX_R * bm25_score + (1-PROX_R) * prox_score
             
