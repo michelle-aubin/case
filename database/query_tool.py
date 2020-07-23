@@ -2,7 +2,7 @@ import sqlite3
 import spacy
 from bm25 import get_idf, get_idfs, calc_summand
 import time
-from constants import PROX_R
+from constants import PROX_R, DOCS_K
 import plac
 from xml.dom import minidom
 from proximity import get_spans, get_max_prox_score
@@ -106,7 +106,7 @@ def main(input_file, output_file, run_tag, db_name):
                 doc_length = c.fetchone()[0]
                 score += calc_summand(tf, idf, doc_length, avg_length)
             # make 100 a parameter
-            if len(doc_scores) < 100:
+            if len(doc_scores) < DOCS_K:
                 hq.heappush(doc_scores, (score, doc_id))
             else:
                 if score > doc_scores[0][0]:
