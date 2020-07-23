@@ -82,12 +82,12 @@ def main(input_file, output_file, run_tag, db_name):
     avg_length = c.fetchone()[0]
     # get max idf for normalizing idfs from en-idf.txt
     max_idf = get_idf(1, total_docs)
-    doc_scores = []
 
     print("Loading model...")
     nlp = spacy.load("../custom_model3", disable=['bc5cdr_ner', 'bionlp13cg_ner', 'entity_ruler', 'web_ner'])
 
     for tnum, query in enumerate(queries):
+        doc_scores = []
         print("Getting scores...")
         start = time.time()
         tnum += 1
@@ -113,10 +113,12 @@ def main(input_file, output_file, run_tag, db_name):
                     hq.heappushpop(doc_scores, (score, doc_id))
             
         # get proximity score
-        for doc_id in doc_scores:
+        for i, tup in enumerate(doc_scores):
+            bm25_score = tup[0]
+            doc_id = tup[1]
             spans = get_spans(doc_id, terms, c)
             prox_score = get_max_prox_score(spans, set(terms))
-            doc_scores[doc_id] = PROX_R * bm25_score + (1-PROX_R) * prox_score
+            doc_scores[i] = (PROX_R * bm25_score + (1-PROX_R) * prox_score, doc_id)
 
         # sort in descending order of score
         doc_scores = hq.nlargest(len(doc_scores), doc_scores)
