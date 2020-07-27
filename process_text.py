@@ -9,7 +9,7 @@ from spacy.util import minibatch
 from pathlib import Path
 
 SEP = "|!|"
-DP_PATH = "../2020-06-19/"
+DP_PATH = "../2020-07-16/"
 
 # returns a tuple of (full text, cord uid) for a doc given
 # a dictionary from the metadata
@@ -110,7 +110,7 @@ def main(start, end, batch_size, num_p):
     # make list of (full text, cord uid) tuples
     print("Reading documents...")
     read_time = time.time()
-    with open("clean-metadata-2020-06-19.csv", "r", encoding="utf-8") as f_meta:
+    with open("clean-metadata-2020-07-16.csv", "r", encoding="utf-8") as f_meta:
         articles = []
         metadata = csv.DictReader(f_meta)
         for row_num, row in enumerate(metadata):
