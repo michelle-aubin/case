@@ -25,7 +25,7 @@ def insert_entities(conn, reset):
                                         sent_id     int,
                                         start       int,
                                         primary key (doc_id,sent_id,start),
-                                        foreign key (doc_id,sent_id) references sentences
+                                        foreign key (doc_id,sent_id) references sentences on delete cascade
                                     );
                     """)
     for root, dirs, files in os.walk("..\entities"):
@@ -66,7 +66,7 @@ def insert_terms(conn, reset):
                             sent_id     int,
                             start       int,
                             primary key (doc_id,sent_id,start),
-                            foreign key (doc_id,sent_id) references sentences
+                            foreign key (doc_id,sent_id) references sentences on delete cascade
                         );
                         """)
 
@@ -353,7 +353,9 @@ def insert_ents_tf(conn):
 def remove_docs(conn):
     f_meta = input("Enter metadata file for remove docs: ")
     c = conn.cursor()
+    c.execute("PRAGMA foreign_keys = ON;")
     c2 = conn.cursor()
+    c2.execute("PRAGMA foreign_keys = ON;")
     docs = set()
     metadata = csv.DictReader(f_meta)
     for row in metadata:
