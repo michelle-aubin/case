@@ -4,6 +4,7 @@ import time
 from constants import SEP
 from collections import defaultdict
 from bm25 import get_idf
+import csv
 
 # Inserts values into entities table
 # conn: connection to the database
@@ -346,3 +347,34 @@ def insert_ents_tf(conn):
         c2.execute("insert into ents_tf values (?, ?, ?);", values)
     conn.commit()
     print("Populating ents_tf took %s seconds" % (time.time() - start))
+
+
+# Removes docs that are not in a given metadata file
+def remove_docs(conn):
+    f_meta = input("Enter metadata file for remove docs: ")
+    c = conn.cursor()
+    c2 = conn.cursor()
+    docs = set()
+    metadata = csv.DictReader(f_meta)
+    for row in metadata:
+        urls = []
+        pdf_url = row.get('pdf_json_files')
+        pmc_url = row.get('pmc_json_files')
+        if pmc_url:
+            urls = pmc_url.split("; ")
+        elif pdf_url:
+            urls = pdf_url.split("; ")
+        if urls:
+            cord_uid = row.get('cord_uid')
+            docs.add(cord_uid)
+    
+    count = 0
+    c.execute("select doc_id from doc_lengths;")
+    for row in c:
+        doc_id = row[0]
+        if doc_id not in docs:
+            c2.execute("delete from doc_lengths where doc_id = :doc_id", {"doc_id": doc_id})
+            c2.execute("delete from sentences where doc_id = :doc_id", {"doc_id": doc_id})
+            count += 1
+    conn.commit()
+    print("Deleted %d docs" % count)
