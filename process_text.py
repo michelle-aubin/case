@@ -64,7 +64,7 @@ def build_output(doc, doc_id, ent_f_out, sent_f_out, term_f_out):
 
         for token in sent:
             # check that token is a term
-            if token.ent_iob == 2 and not token.is_punct:
+            if not token.is_punct:
               # term|!|doc id|!|sent id|!|offset start
                 data_list = [token.lower_, doc_id, str(sent_id), 
                             str(token.idx - sent.start_char)]
