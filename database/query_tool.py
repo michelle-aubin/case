@@ -6,7 +6,7 @@ from constants import PROX_R, DOCS_K
 import plac
 from xml.dom import minidom
 from proximity import get_spans, get_max_prox_score
-import heapq as hq
+from priority_queue import PQueue
 
 # Returns a list of queries
 def get_queries(input_file):
@@ -17,8 +17,12 @@ def get_queries(input_file):
         queries.append(topic.getElementsByTagName('query')[0].childNodes[0].data)
     return queries
 
-# Returns lists of terms given a query
+# Returns a list of lists containing terms given a query
+# If none of the query terms have synonyms, a list of just one list is returned
+# Else different versions of the query each have their own list
 def get_terms(query, nlp, stop_words):
+    cov_synonyms = {"coronavirus", "covid-19", "sars-cov-2"}
+    query_versions = []
     terms = set()
     doc = nlp(query)
     print("Terms found:")
@@ -27,7 +31,16 @@ def get_terms(query, nlp, stop_words):
         if not token.is_punct and token.text.lower() not in stop_words:
             print("\t%s" % token.text)
             terms.add(token.text.lower())
-    return list(terms)
+    query_versions.append(list(terms))
+    for term in terms:
+        if term in cov_synonyms:
+            print("Synonyms found for term %s:" % term)
+            for syn in cov_synonyms:
+                if syn == term:
+                    continue
+                print("\t%s" % syn)
+                query_versions.append(list((terms - {term}) | {syn}))
+    return query_versions
 
 # Returns a dictionary with terms as keys and sorted lists of (doc id, term frequency) tuples as values
 # terms: query terms
@@ -87,46 +100,44 @@ def main(input_file, output_file, run_tag, db_name):
     nlp = spacy.load("../custom_model3", disable=['bc5cdr_ner', 'bionlp13cg_ner', 'entity_ruler', 'web_ner'])
 
     for tnum, query in enumerate(queries):
-        doc_scores = []
+        doc_scores = PQueue(DOCS_K)
         print("Getting scores...")
         start = time.time()
         tnum += 1
-        terms = get_terms(query, nlp, stop_words)
-        idfs = get_idfs(terms, c, max_idf)
-        posting_lists = get_posting_lists(terms, c)
+        query_versions = get_terms(query, nlp, stop_words)
+        for terms in query_versions:
+            print("for terms ", terms)
+            idfs = get_idfs(terms, c, max_idf)
+            posting_lists = get_posting_lists(terms, c)
 
-        # traverse the posting lists at the same time to get bm25 score
-        for i in range(len(posting_lists[terms[0]])):
-            score = 0
-            for term, plist in posting_lists.items():
-                tf = plist[i][1]
-                idf = idfs[term]
-                doc_id = plist[i][0]
+            # traverse the posting lists at the same time to get bm25 score
+            for i in range(len(posting_lists[terms[0]])):
+                score = 0
+                doc_id = posting_lists[terms[0]][i][0]
                 c.execute("select length from doc_lengths where doc_id = :doc_id;", {"doc_id":doc_id})
                 doc_length = c.fetchone()[0]
-                score += calc_summand(tf, idf, doc_length, avg_length)
-            # make 100 a parameter
-            if len(doc_scores) < DOCS_K:
-                hq.heappush(doc_scores, (score, doc_id))
-            else:
-                if score > doc_scores[0][0]:
-                    hq.heappushpop(doc_scores, (score, doc_id))
-            
+                for term, plist in posting_lists.items():
+                    tf = plist[i][1]
+                    idf = idfs[term]
+                    score += calc_summand(tf, idf, doc_length, avg_length)
+                doc_scores.add_doc_score(doc_id, score)
+                
         # get proximity score
-        for i, tup in enumerate(doc_scores):
+        for i, tup in enumerate(doc_scores.get_items()):
             bm25_score = tup[0]
             doc_id = tup[1]
             spans = get_spans(doc_id, terms, c)
             prox_score = get_max_prox_score(spans, set(terms))
-            doc_scores[i] = (PROX_R * bm25_score + (1-PROX_R) * prox_score, doc_id)
+            new_score = (PROX_R * bm25_score + (1-PROX_R) * prox_score, doc_id)
+            doc_scores.assign_new_score(i, new_score)
 
         # sort in descending order of score
-        doc_scores = hq.nlargest(len(doc_scores), doc_scores)
+        doc_scores.sort_descending()
 
         print("Took %.2f seconds to get scores" % (time.time() - start))
         i = 0
         with open(output_file, "a") as f_out:
-            for tup in doc_scores:
+            for tup in doc_scores.get_items():
                 doc = tup[1]
                 score = tup[0]
                 # return max 1000 docs
