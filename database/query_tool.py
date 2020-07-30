@@ -1,32 +1,12 @@
 import sqlite3
 import spacy
-from bm25 import get_score, get_idf, get_idfs
+from bm25 import get_idf, get_idfs, calc_summand
 import time
-from constants import URL
-# import csv
+from constants import PROX_R, DOCS_K
 import plac
 from xml.dom import minidom
-
-# Returns a dictionary with doc ids as key and score of 0 as values
-# c: cursor for database
-def get_doc_ids(c, docs_file):
-    with open(docs_file, "r") as f_in:
-        valid = {line.strip() for line in f_in}
-    doc_scores = {}
-    # all docs
-    c.execute("select doc_id from doc_lengths;")
-    for row in c:
-        doc_id = row[0]
-        if doc_id in valid:
-            doc_scores[doc_id] = 0
-
-    # only docs that are related to covid19
-    # c.execute("select distinct doc_id from entities where type = \"CORONAVIRUS\";")
-    # for row in c:
-    #     doc_id = row[0]
-    #     doc_scores[doc_id] = 0
-
-    return doc_scores
+from proximity import get_spans, get_max_prox_score
+from priority_queue import PQueue
 
 # Returns a list of queries
 def get_queries(input_file):
@@ -37,49 +17,49 @@ def get_queries(input_file):
         queries.append(topic.getElementsByTagName('query')[0].childNodes[0].data)
     return queries
 
-# Returns lists of terms and entities given a query
-def get_terms_and_ents(query, nlp, stop_words):
-    terms = []
-    entities = []
-    splitted_terms = []
-    splitted_ents = []
+# Returns a list of lists containing terms given a query
+# If none of the query terms have synonyms, a list of just one list is returned
+# Else different versions of the query each have their own list
+def get_terms(query, nlp, stop_words):
+    cov_synonyms = {"coronavirus", "covid-19", "sars-cov-2"}
+    query_versions = []
+    terms = set()
     doc = nlp(query)
-    print("Entities found:")
-    for ent in doc.ents:
-        print("\t%s" % ent.text)
-        entities.append(ent.text.lower())
-        words = ent.text.split(" ")
-        # entity is more than 1 word so split it
-        if len(words) > 1:
-            for word in words:
-                word_doc = nlp(word)
-                # word is a term
-                if len(word_doc.ents) == 0:
-                    splitted_terms.append(word_doc[0].text.lower())
-                # word is an entity
-                else:
-                    splitted_ents.append(word_doc[0].text.lower())
-        else:
-            splitted_ents.append(ent.text.lower())
-
     print("Terms found:")
     for token in doc:
-        # if token is a non entity and not a punct and not a stop word
-        if token.ent_iob == 2 and not token.is_punct and token.text.lower() not in stop_words:
+        # if token is not a punct and not a stop word
+        if not token.is_punct and token.text.lower() not in stop_words:
             print("\t%s" % token.text)
-            terms.append(token.text.lower())
-            splitted_terms.append(token.text.lower())
-    # return original terms and ents, and splitted
-    return terms, entities, splitted_terms, splitted_ents
+            terms.add(token.text.lower())
+    query_versions.append(list(terms))
+    for term in terms:
+        if term in cov_synonyms:
+            print("Synonyms found for term %s:" % term)
+            for syn in cov_synonyms:
+                if syn == term:
+                    continue
+                print("\t%s" % syn)
+                query_versions.append(list((terms - {term}) | {syn}))
+    return query_versions
+
+# Returns a dictionary with terms as keys and sorted lists of (doc id, term frequency) tuples as values
+# terms: query terms
+# c: cursor for database
+def get_posting_lists(terms, c):
+    posting_lists = {}
+    for term in terms:
+        # gets list of (doc id, frequency) tuples sorted by doc id
+        c.execute("select doc_id, frequency from terms_tf where term = :term;", {"term": term})
+        posting_lists[term] = c.fetchall()
+    return posting_lists
 
 @plac.annotations(
    input_file=("Input file of queries", "positional", None, str),
    output_file=("Output file", "positional", None, str), 
    run_tag=("Tag representing the run", "positional", None, str),
-   valid_docs=("Text file of valid doc ids to use", "positional", None, str),
    db_name=("Database name", "positional", None, str)
 )
-def main(input_file, output_file, run_tag, valid_docs, db_name):
+def main(input_file, output_file, run_tag, db_name):
     conn = sqlite3.connect(db_name)
     c = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")
@@ -92,8 +72,6 @@ def main(input_file, output_file, run_tag, valid_docs, db_name):
     for row in c:
         stop_words.add(row[0])
 
-    # get valid docs to include in ranking
-    doc_scores = get_doc_ids(c, valid_docs)
     # get queries from input file
     queries = get_queries(input_file)
     # get total num of docs
@@ -104,32 +82,68 @@ def main(input_file, output_file, run_tag, valid_docs, db_name):
     avg_length = c.fetchone()[0]
     # get max idf for normalizing idfs from en-idf.txt
     max_idf = get_idf(1, total_docs)
+    # get dictionary of doc id and doc lengths
+    doc_lenghts = {}
+    c.execute("select doc_id, length from doc_lengths;")
+    for row in c:
+        doc_lenghts[row[0]] = row[1]
 
     print("Loading model...")
-    nlp = spacy.load("../custom_model3")
+    nlp = spacy.load("../custom_model3", disable=['bc5cdr_ner', 'bionlp13cg_ner', 'entity_ruler', 'web_ner'])
 
     for tnum, query in enumerate(queries):
-        tnum += 1
-        terms, entities, splitted_terms, splitted_ents = get_terms_and_ents(query, nlp, stop_words)
-        idfs = get_idfs(terms, entities, splitted_terms, splitted_ents, c, max_idf)
-
+        doc_scores = PQueue(DOCS_K)
         print("Getting scores...")
         start = time.time()
-        for doc_id in doc_scores:
-            doc_scores[doc_id] = get_score(doc_id, terms, entities, total_docs, avg_length, idfs, c)
-            # if entities have been split, get score using the split version
-            if terms != splitted_terms or entities != splitted_ents:
-                split_score = get_score(doc_id, splitted_terms, splitted_ents, total_docs, avg_length, idfs, c)
-                # take max between split score and original score
-                if split_score > doc_scores[doc_id]:
-                    doc_scores[doc_id] = split_score
+        tnum += 1
+        query_versions = get_terms(query, nlp, stop_words)
+        for terms in query_versions:
+            # print("for terms ", terms)
+            idfs = get_idfs(terms, c, max_idf)
+            posting_lists = get_posting_lists(terms, c)
+            indices = {term: 0 for term in terms}
+            stop = False
+            # traverse the posting lists at the same time to get bm25 score
+            while indices:
+                postings = {}
+                score = 0
+                for term, index in indices.items():
+                    postings[term] = posting_lists[term][index][0]
+               # print(postings)
+                smallest_doc = min(postings.values())
+                for term, doc_id in postings.items():
+                    if doc_id == smallest_doc:
+                        doc_length = doc_lenghts[doc_id]
+                        idf = idfs[term]
+                        tf = posting_lists[term][indices[term]][1]
+                        score += calc_summand(tf, idf, doc_length, avg_length)
+                        indices[term] += 1
+                        # traversed the entire posting list
+                        if indices[term] >= len(posting_lists[term]):
+                            indices.pop(term)
+                doc_scores.add_doc_score(doc_id, score)
+            break
+                
+        # get proximity score
+        for i, tup in enumerate(doc_scores.get_items()):
+            bm25_score = tup[0]
+            doc_id = tup[1]
+            spans = get_spans(doc_id, terms, c)
+            prox_score = get_max_prox_score(spans, set(terms))
+            new_score = (PROX_R * bm25_score + (1-PROX_R) * prox_score, doc_id)
+            doc_scores.assign_new_score(i, new_score)
+
+        # sort in descending order of score
+        doc_scores.sort_descending()
 
         print("Took %.2f seconds to get scores" % (time.time() - start))
         i = 0
         with open(output_file, "a") as f_out:
-            for doc, score in sorted(doc_scores.items(), key=lambda item: item[1], reverse=True):
+            for tup in doc_scores.get_items():
+                doc = tup[1]
+                score = tup[0]
                 # return max 1000 docs
-                if i >= 1000 or score == 0:
+                if i >= 1000 or not doc_scores:
                     # no docs returned
                     if i == 0:
                         # make dummy list

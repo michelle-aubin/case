@@ -35,33 +35,22 @@ def get_judgements(input_file, t):
 def main(f_result, f_key, f_queries):
     queries = get_queries(f_queries)
     with open(f_result, "r") as f_in:
-        for tnum, query in enumerate(queries):
-            print("Query: ", query)
-            judgements = get_judgements(f_key, tnum+1)
-            results = []
-            for i in range(1000):
-                result = f_in.readline()
-                if len(result) < 3:
-                    break
+        for line in f_in:
+            tnum, q0, doc_id, rank, score = line.strip().split("\t")
+            tnum = int(tnum)
+            judgements = get_judgements(f_key, tnum)
+            try:
+                score = judgements[doc_id]
+            except KeyError:
+                score = 0
+            finally:
+                if score == 0:
+                    score_str = ""
+                elif score == 1:
+                    score_str = "partially"
                 else:
-                    results.append(result.strip())
-                if i == 999:
-                    f_in.readline()
-
-            for doc_id in results:
-                try:
-                    score = judgements[doc_id]
-                except KeyError:
-                    score = 0
-                finally:
-                    if score == 0:
-                        score_str = ""
-                    elif score == 1:
-                        score_str = "partially"
-                    else:
-                        score_str = "fully"
-                    print("\t%s - %s" % (doc_id, score_str))
-            print()
+                    score_str = "fully"
+                print("%d\t%d\t%s - %s" % (tnum, int(rank), doc_id, score_str))
 
 if __name__ == "__main__":
     plac.call(main)

@@ -7,10 +7,9 @@ from joblib import Parallel, delayed
 from functools import partial
 from spacy.util import minibatch
 from pathlib import Path
-import urllib.request
 
 SEP = "|!|"
-URL = "https://ai2-semanticscholar-cord-19.s3-us-west-2.amazonaws.com/latest/"
+DP_PATH = "../2020-07-16/"
 
 # returns a tuple of (full text, cord uid) for a doc given
 # a dictionary from the metadata
@@ -24,18 +23,13 @@ def get_text_id_tuple(row_dict):
     abstract = row_dict['abstract']
     if abstract:
         texts.append(abstract)
-    url_str = row_dict['json_file']
-    try:
-        with urllib.request.urlopen(URL + url_str) as url:
-            full_text_dict = json.loads(url.read().decode())
-            for paragraph_dict in full_text_dict['body_text']:
-                text = paragraph_dict['text'].replace('\n', '')
-                texts.append(text)
-            full = " ".join(texts)
-            return (full, doc_id)  
-    except Exception:
-        print("Trying %s again" % doc_id)
-        get_text_id_tuple(row_dict)
+    with open(DP_PATH+row_dict['json_file'], "r", encoding="utf-8") as f_json:
+        full_text_dict = json.load(f_json)
+        for paragraph_dict in full_text_dict['body_text']:
+            text = paragraph_dict['text'].replace('\n', '')
+            texts.append(text)
+    full = " ".join(texts)
+    return (full, doc_id)  
 
 # run batch through pipeline and create output files for the batch
 def process(nlp, batch_id, texts, f_ent, f_sent, f_term):
@@ -70,7 +64,7 @@ def build_output(doc, doc_id, ent_f_out, sent_f_out, term_f_out):
 
         for token in sent:
             # check that token is a term
-            if token.ent_iob == 2 and not token.is_punct:
+            if not token.is_punct:
               # term|!|doc id|!|sent id|!|offset start
                 data_list = [token.lower_, doc_id, str(sent_id), 
                             str(token.idx - sent.start_char)]
@@ -116,7 +110,7 @@ def main(start, end, batch_size, num_p):
     # make list of (full text, cord uid) tuples
     print("Reading documents...")
     read_time = time.time()
-    with open("clean-metadata-may-missing-from-june.csv", "r", encoding="utf-8") as f_meta:
+    with open("clean-metadata-2020-07-16.csv", "r", encoding="utf-8") as f_meta:
         articles = []
         metadata = csv.DictReader(f_meta)
         for row_num, row in enumerate(metadata):
