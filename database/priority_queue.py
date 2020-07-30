@@ -18,7 +18,7 @@ class PQueue:
                     self.replace_doc_score(old_doc_score, (score, doc_id))
             else:
                 hq.heappush(self.__items, (score, doc_id))
-                print("Added ", (score, doc_id))
+                # print("Added ", (score, doc_id))
                 # print(self.__items)
                 self.__entry_finder[doc_id] = (score, doc_id)
         # pqueue is full
@@ -34,13 +34,13 @@ class PQueue:
                 else:
                     removed = hq.heappushpop(self.__items, (score, doc_id))
                     # print("Removed ", removed)
-                    print("Added ", (score, doc_id))
+                    # print("Added ", (score, doc_id))
                     self.__entry_finder.pop(removed[1])
                     self.__entry_finder[doc_id] = (score, doc_id)
         
 
     def replace_doc_score(self, old_doc_score, new_doc_score):
-        print("Replacing ", old_doc_score, " with ", new_doc_score)
+        # print("Replacing ", old_doc_score, " with ", new_doc_score)
         self.__items.remove(old_doc_score)
         # print(self.__items)
         self.__items.append(new_doc_score)
