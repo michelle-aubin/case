@@ -83,10 +83,10 @@ def main(input_file, output_file, run_tag, db_name):
     # get max idf for normalizing idfs from en-idf.txt
     max_idf = get_idf(1, total_docs)
     # get dictionary of doc id and doc lengths
-    doc_lenghts = {}
+    doc_lengths = {}
     c.execute("select doc_id, length from doc_lengths;")
     for row in c:
-        doc_lenghts[row[0]] = row[1]
+        doc_lengths[row[0]] = row[1]
 
     print("Loading model...")
     nlp = spacy.load("../custom_model3", disable=['bc5cdr_ner', 'bionlp13cg_ner', 'entity_ruler', 'web_ner'])
@@ -113,7 +113,7 @@ def main(input_file, output_file, run_tag, db_name):
                 smallest_doc = min(postings.values())
                 for term, doc_id in postings.items():
                     if doc_id == smallest_doc:
-                        doc_length = doc_lenghts[doc_id]
+                        doc_length = doc_lengths[doc_id]
                         idf = idfs[term]
                         tf = posting_lists[term][indices[term]][1]
                         score += calc_summand(tf, idf, doc_length, avg_length)
