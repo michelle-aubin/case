@@ -47,23 +47,10 @@ def get_terms(query, nlp, stop_words):
 # c: cursor for database
 def get_posting_lists(terms, c):
     posting_lists = {}
-    doc_sets = {}
     for term in terms:
         # gets list of (doc id, frequency) tuples sorted by doc id
         c.execute("select doc_id, frequency from terms_tf where term = :term;", {"term": term})
         posting_lists[term] = c.fetchall()
-        # get set of docs for each term
-        doc_sets[term] = {tup[0] for tup in posting_lists[term]}
-    if len(terms) == 1:
-        return posting_lists
-    # only keep docs that have all of the terms
-    intersect_docs = set.intersection(*doc_sets.values())
-    for term in terms:
-        new_list = []
-        for tup in posting_lists[term]:
-            if tup[0] in intersect_docs:
-                new_list.append(tup)
-        posting_lists[term] = new_list
     return posting_lists
 
 @plac.annotations(
@@ -108,23 +95,35 @@ def main(input_file, output_file, run_tag, db_name):
         for terms in query_versions:
             # print("for terms ", terms)
             idfs = get_idfs(terms, c, max_idf)
-            for term in idfs:
-                if term in {"coronavirus", "covid-19", "sars-cov-2"}:
-                    idfs[term] = 0.9777831166544537
+            # for term in idfs:
+            #     if term in {"coronavirus", "covid-19", "sars-cov-2"}:
+            #         idfs[term] = 0.9777831166544537
             # idfs["coronavirus"] = 0.301559501173731
             posting_lists = get_posting_lists(terms, c)
-
+            indices = {term: 0 for term in terms}
+            stop = False
             # traverse the posting lists at the same time to get bm25 score
-            for i in range(len(posting_lists[terms[0]])):
+            while indices:
+                postings = {}
                 score = 0
-                doc_id = posting_lists[terms[0]][i][0]
-                c.execute("select length from doc_lengths where doc_id = :doc_id;", {"doc_id":doc_id})
+                for term, index in indices.items():
+                    postings[term] = posting_lists[term][index][0]
+               # print(postings)
+                smallest_doc = min(postings.values())
+                c.execute("select length from doc_lengths where doc_id = :doc_id;", {"doc_id": smallest_doc})
                 doc_length = c.fetchone()[0]
-                for term, plist in posting_lists.items():
-                    tf = plist[i][1]
-                    idf = idfs[term]
-                    score += calc_summand(tf, idf, doc_length, avg_length)
+                for term, doc_id in postings.items():
+                    if doc_id == smallest_doc:
+                        idf = idfs[term]
+                        tf = posting_lists[term][indices[term]][1]
+                        score += calc_summand(tf, idf, doc_length, avg_length)
+                        indices[term] += 1
+                        # traversed the entire posting list
+                        if indices[term] >= len(posting_lists[term]):
+                            print("popping ", term)
+                            indices.pop(term)
                 doc_scores.add_doc_score(doc_id, score)
+            break
                 
         # get proximity score
         for i, tup in enumerate(doc_scores.get_items()):
