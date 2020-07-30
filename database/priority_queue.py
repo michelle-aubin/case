@@ -51,6 +51,7 @@ class PQueue:
         return self.__items
 
     # assigns new score to doc score at index i of the list
+    # used when adding proximity score to a doc's score
     def assign_new_score(self, i, new_score):
         self.__items[i] = new_score
         # could update entry finder with new score
