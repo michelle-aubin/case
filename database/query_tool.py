@@ -82,6 +82,11 @@ def main(input_file, output_file, run_tag, db_name):
     avg_length = c.fetchone()[0]
     # get max idf for normalizing idfs from en-idf.txt
     max_idf = get_idf(1, total_docs)
+    # get dictionary of doc id and doc lengths
+    doc_lenghts = {}
+    c.execute("select doc_id, length from doc_lengths;")
+    for row in c:
+        doc_lenghts[row[0]] = row[1]
 
     print("Loading model...")
     nlp = spacy.load("../custom_model3", disable=['bc5cdr_ner', 'bionlp13cg_ner', 'entity_ruler', 'web_ner'])
@@ -95,10 +100,6 @@ def main(input_file, output_file, run_tag, db_name):
         for terms in query_versions:
             # print("for terms ", terms)
             idfs = get_idfs(terms, c, max_idf)
-            # for term in idfs:
-            #     if term in {"coronavirus", "covid-19", "sars-cov-2"}:
-            #         idfs[term] = 0.9777831166544537
-            # idfs["coronavirus"] = 0.301559501173731
             posting_lists = get_posting_lists(terms, c)
             indices = {term: 0 for term in terms}
             stop = False
@@ -110,17 +111,15 @@ def main(input_file, output_file, run_tag, db_name):
                     postings[term] = posting_lists[term][index][0]
                # print(postings)
                 smallest_doc = min(postings.values())
-                c.execute("select length from doc_lengths where doc_id = :doc_id;", {"doc_id": smallest_doc})
-                doc_length = c.fetchone()[0]
                 for term, doc_id in postings.items():
                     if doc_id == smallest_doc:
+                        doc_length = doc_lenghts[doc_id]
                         idf = idfs[term]
                         tf = posting_lists[term][indices[term]][1]
                         score += calc_summand(tf, idf, doc_length, avg_length)
                         indices[term] += 1
                         # traversed the entire posting list
                         if indices[term] >= len(posting_lists[term]):
-                            print("popping ", term)
                             indices.pop(term)
                 doc_scores.add_doc_score(doc_id, score)
             break
