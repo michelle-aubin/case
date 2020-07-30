@@ -106,8 +106,12 @@ def main(input_file, output_file, run_tag, db_name):
         tnum += 1
         query_versions = get_terms(query, nlp, stop_words)
         for terms in query_versions:
-            print("for terms ", terms)
+            # print("for terms ", terms)
             idfs = get_idfs(terms, c, max_idf)
+            for term in idfs:
+                if term in {"coronavirus", "covid-19", "sars-cov-2"}:
+                    idfs[term] = 0.9777831166544537
+            # idfs["coronavirus"] = 0.301559501173731
             posting_lists = get_posting_lists(terms, c)
 
             # traverse the posting lists at the same time to get bm25 score
