@@ -94,23 +94,27 @@ def main(input_file, output_file, run_tag, db_name):
         tnum += 1
         query_versions = get_terms(query, nlp, stop_words)
         for terms in query_versions:
-            # print("for terms ", terms)
+            print("for terms ", terms)
             idfs = get_idfs(terms, c, max_idf)
             posting_lists = get_posting_lists(terms, c)
-            wand = Wand(terms, posting_lists)
+            wand = Wand(terms, posting_lists, idfs)
             threshhold = 0
-            doc_id = True
-            while doc_id:
-                doc_id = wand.next()
+            while True:
+                doc_id = wand.next(threshhold)
+                if not doc_id:
+                    break
                 # get score for this doc
                 score = 0
                 c.execute("select length from doc_lengths where doc_id = :doc_id;", {"doc_id":doc_id})
                 doc_length = c.fetchone()[0]
                 for term, index in wand.posting.items():
-                    # tf = plist[i][1]
-                    # idf = idfs[term]
-                    # score += calc_summand(tf, idf, doc_length, avg_length)
+                    tf = posting_lists[term][index][1]
+                    idf = idfs[term]
+                    score += calc_summand(tf, idf, doc_length, avg_length)
                 doc_scores.add_doc_score(doc_id, score)
+                # threshold <- lowest score in top-k results
+                threshhold = doc_scores.get_min()
+                # print("threshold ", threshhold)
                 
         # get proximity score
         for i, tup in enumerate(doc_scores.get_items()):

@@ -1,8 +1,10 @@
+from constants import BM25_B, BM25_K1, BM25_delta
 
 class Wand:
-    def __init__(self, query_terms, posting_lists):
+    def __init__(self, query_terms, posting_lists, idfs):
+        self.idfs = idfs
         # current document to be considered
-        self.cur_doc = 0
+        self.cur_doc = "0"
         # dictionary of term as key and posting list as value
         self.posting_lists = posting_lists
         # list of query terms
@@ -11,8 +13,6 @@ class Wand:
         self.posting = {term: 0 for term in query_terms}
         # dictionary of term as key and the term's upper bound score as value
         self.ubt_values = {term: self.get_UBt(term) for term in query_terms}
-        # last doc id (largest doc id) out of all of the posting lists
-        self.last_doc_id = self.get_last_doc_id()
 
 
     # Get's the upper bound score contribution for a term
@@ -20,16 +20,16 @@ class Wand:
     # posting_list: a list of (doc_id, term frequency) tuples for the term
     def get_UBt(self, term):
         posting_list = self.posting_lists[term]
-        return max(tup[1] for tup in posting_list)
+        max_tf = max(tup[1] for tup in posting_list)
+        numerator = max_tf * (BM25_K1 + 1)
+        denominator = max_tf + BM25_K1 * (1 - BM25_B + BM25_B)
+        return self.idfs[term] * ((numerator / denominator) + BM25_delta)
 
     # Returns the last doc id (largest doc id) out of all of the posting lists
-    def get_last_doc_id(self):
-        last_doc_id = "0"
-        for posting_list in self.posting_lists.values():
-            doc = posting_list[-1][0]
-            if doc > last_doc_id:
-                last_doc_id = doc
-        return last_doc_id
+    def get_last_doc_id(self, term):
+        posting_list = self.posting_lists[term]
+        doc = posting_list[-1][0]
+        return doc
 
     def next(self, threshold):
         while True:
@@ -38,20 +38,21 @@ class Wand:
             pivot_term = self.find_pivot_term(threshold)
             # no more docs left so return None
             if not pivot_term:
+                print("no pivot found")
                 return None
             # get the pivot doc
-            pivot = self.get_posting(term)
+            pivot = self.get_posting(pivot_term)
             # no more docs left so return None
-            if pivot == self.last_doc_id:
+            if pivot == self.get_last_doc_id(pivot_term):
                 return None
             # pivot has already been considered
             if pivot <= self.cur_doc:
                 # advance one of the preceding terms' index
-                aterm = self.pick_term(terms[0:index(pivot_term)])
+                aterm = self.pick_term(self.query_terms[0:self.query_terms.index(pivot_term)])
                 self.increase_posting_index(aterm)
             else:
                 # all terms preceeding pivot_term belong to the pivot
-                if (self.get_posting(posting[terms[0]])):
+                if (self.get_posting(self.query_terms[0])):
                     self.cur_doc = pivot
                     return self.cur_doc
                 # not enough mass yet on pivot
@@ -98,14 +99,15 @@ class Wand:
     def get_posting(self, term):
         index = self.posting[term]
         posting_list = self.posting_lists[term]
-        return posting_list[index]
+        return posting_list[index][0]
 
     # Increases term's posting list index until it points to a doc
     # that is larger than the current doc
     def increase_posting_index(self, term):
         doc = self.get_posting(term)
-        while doc <= self.cur_doc:
+        while doc <= self.cur_doc :
             self.posting[term] += 1
+            doc = self.get_posting(term)
 
 
 
