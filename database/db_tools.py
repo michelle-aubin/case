@@ -45,8 +45,6 @@ def insert_entities(conn, reset):
                         print("Bad line: ", entry)
     conn.commit()
     print("Populating entities took %s seconds" % (time.time() - start))
-    insert_ents_idf(conn)
-    insert_ents_tf(conn)
 
 # Inserts values into terms table
 # conn: connection to the database
@@ -270,113 +268,38 @@ def insert_terms_tf(conn):
     conn.commit()
     print("Populating terms_tf took %s seconds" % (time.time() - start))
 
-# Inserts values into ents_idf table
-# conn: connection to the database
-def insert_ents_idf(conn):
-    start = time.time()
-    c = conn.cursor()
-    c2 = conn.cursor()
-    c.execute("PRAGMA foreign_keys = ON;")
-    conn.commit()
-
-    c.executescript("""
-                    drop table if exists ents_idf;
-                    create table ents_idf (
-                        entity      text,
-                        idf       float,
-                        idf2      float,
-                        primary key (entity)
-                    );
-                    """)
-
-    c.execute("select count(doc_id) from doc_lengths;")
-    total_docs = c.fetchone()[0]
-
-    # get idfs from en-idf
-    # inserts original idf (not normalized)
-    en_idf = {}
-    with open("en-idf.txt", "r", encoding="utf-8") as f_in:
-        for line in f_in:
-            ent, idf = line.split("@en:")
-            idf = float(idf.strip())
-            en_idf[ent] = idf
-
-    c.execute(""" select entity, count(distinct doc_id)
-                from entities
-                group by entity
-        """)
-    for row in c:
-        ent = row[0]
-        idf = get_idf(row[1], total_docs)
-        idf2 = None
-        try:
-            idf2 = en_idf[ent]
-        except:
-            idf2 = None
-        finally:
-            values = (ent, idf, idf2)
-            c2.execute("insert into ents_idf values (?, ?, ?);", values)
-    conn.commit()    
-    print("Populating ents_idf took %s seconds" % (time.time() - start))
-
-# Inserts values into ents_tf table
-# conn: connection to the database
-def insert_ents_tf(conn):
-    start = time.time()
-    c = conn.cursor()
-    c2 = conn.cursor()
-    c.execute("PRAGMA foreign_keys = ON;")
-    conn.commit()
-    c.executescript("""
-                    drop table if exists ents_tf;
-                    create table ents_tf (
-                        entity        text,
-                        doc_id      char(8),
-                        frequency   float,
-                        primary key (entity, doc_id)
-                    );
-                    """)
-
-    c.execute(""" select e.entity, e.doc_id, count(*), d.length
-                    from entities e, doc_lengths d
-                    where e.doc_id = d.doc_id
-                    group by e.entity, e.doc_id;
-            """)
-    for row in c:
-        values = (row[0], row[1], row[2] / row[3])
-        c2.execute("insert into ents_tf values (?, ?, ?);", values)
-    conn.commit()
-    print("Populating ents_tf took %s seconds" % (time.time() - start))
-
-
 # Removes docs that are not in a given metadata file
 def remove_docs(conn):
-    f_meta = input("Enter metadata file for remove docs: ")
+    f_in = input("Enter metadata file for remove docs: ")
     c = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")
     c2 = conn.cursor()
     c2.execute("PRAGMA foreign_keys = ON;")
     docs = set()
-    metadata = csv.DictReader(f_meta)
-    for row in metadata:
-        urls = []
-        pdf_url = row.get('pdf_json_files')
-        pmc_url = row.get('pmc_json_files')
-        if pmc_url:
-            urls = pmc_url.split("; ")
-        elif pdf_url:
-            urls = pdf_url.split("; ")
-        if urls:
-            cord_uid = row.get('cord_uid')
-            docs.add(cord_uid)
-    
-    count = 0
-    c.execute("select doc_id from doc_lengths;")
-    for row in c:
-        doc_id = row[0]
-        if doc_id not in docs:
-            c2.execute("delete from doc_lengths where doc_id = :doc_id", {"doc_id": doc_id})
-            c2.execute("delete from sentences where doc_id = :doc_id", {"doc_id": doc_id})
-            count += 1
-    conn.commit()
-    print("Deleted %d docs" % count)
+    with open(f_in, "r", encoding="utf-8") as f_meta:
+        metadata = csv.DictReader(f_meta)
+        for row in metadata:
+            urls = []
+            pdf_url = row.get('pdf_json_files')
+            pmc_url = row.get('pmc_json_files')
+            if pmc_url:
+                urls = pmc_url.split("; ")
+            elif pdf_url:
+                urls = pdf_url.split("; ")
+            if urls:
+                cord_uid = row.get('cord_uid')
+                docs.add(cord_uid)
+        
+        count = 0
+        c.execute("select doc_id from doc_lengths;")
+        for row in c:
+            doc_id = row[0]
+            if doc_id not in docs:
+                c2.execute("delete from doc_lengths where doc_id = :doc_id", {"doc_id": doc_id})
+                c2.execute("delete from entities where doc_id = :doc_id", {"doc_id": doc_id})
+                c2.execute("delete from terms where doc_id = :doc_id", {"doc_id": doc_id})
+                c2.execute("delete from sentences where doc_id = :doc_id", {"doc_id": doc_id})
+                count += 1
+        conn.commit()
+        # could recalculate idfs
+        print("Deleted %d docs" % count)
