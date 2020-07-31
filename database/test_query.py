@@ -94,12 +94,14 @@ def main(db_name):
         print("Getting scores...")
         start = time.time()
         query_versions = get_terms(query, nlp, stop_words)
-        for terms in query_versions:
+        all_doc_scores = {i: 0 for i in range(len(query_versions))}
+        for i, terms in enumerate(query_versions):
+            doc_scores = PQueue(DOCS_K)
             print("for terms ", terms)
             idfs = get_idfs(terms, c, max_idf)
-            # for term in idfs:
-            #     if term in {"coronavirus", "covid-19", "sars-cov-2"}:
-            #         idfs[term] = 0.9777831166544537
+            for term in idfs:
+                if term in {"coronavirus", "covid-19", "sars-cov-2"}:
+                    idfs[term] = 0.8003465731853253
             posting_lists = get_posting_lists(terms, c)
             indices = {term: 0 for term in terms}
             # traverse the posting lists at the same time to get bm25 score
@@ -121,26 +123,24 @@ def main(db_name):
                         if indices[term] >= len(posting_lists[term]):
                             indices.pop(term)
                 doc_scores.add_doc_score(doc_id, score)
-
-            for term, plist in posting_lists.items():
-                print(term)
-                for i, doc in enumerate(plist):
-                    print(i, doc)
-                    if i > 10:
-                        break
-            
+            all_doc_scores[i] = doc_scores
+            doc_scores.sort_descending()
+            for score, doc in doc_scores.get_items():
+                print(score, doc)
                 
-        # get proximity score
-        for i, tup in enumerate(doc_scores.get_items()):
-            bm25_score = tup[0]
-            doc_id = tup[1]
-            spans = get_spans(doc_id, terms, c)
-            prox_score = get_max_prox_score(spans, set(terms))
-            new_score = (PROX_R * bm25_score + (1-PROX_R) * prox_score, doc_id)
-            doc_scores.assign_new_score(i, new_score)
 
-        # sort in descending order of score
-        doc_scores.sort_descending()
+        # get proximity score
+        for doc_scores in all_doc_scores.values():
+            for i, tup in enumerate(doc_scores.get_items()):
+                bm25_score = tup[0]
+                doc_id = tup[1]
+                spans = get_spans(doc_id, terms, c)
+                prox_score = get_max_prox_score(spans, set(terms))
+                new_score = (PROX_R * bm25_score + (1-PROX_R) * prox_score, doc_id)
+                doc_scores.assign_new_score(i, new_score)
+
+            # sort in descending order of score
+            doc_scores.sort_descending()
 
         print("Took %.2f seconds to get scores" % (time.time() - start))
         i = 0
