@@ -92,21 +92,20 @@ def main(input_file, output_file, run_tag, db_name):
     nlp = spacy.load("../custom_model3", disable=['bc5cdr_ner', 'bionlp13cg_ner', 'entity_ruler', 'web_ner'])
 
     for tnum, query in enumerate(queries):
-        
+        doc_scores = PQueue(DOCS_K)
         print("Getting scores...")
         start = time.time()
         tnum += 1
         query_versions = get_terms(query, nlp, stop_words)
-        all_doc_scores = {i: 0 for i in range(len(query_versions))}
-        for i, terms in enumerate(query_versions):
-            doc_scores = PQueue(DOCS_K)
+        for terms in query_versions:
             # print("for terms ", terms)
             idfs = get_idfs(terms, c, max_idf)
-            # for term in idfs:
-            #     if term in {"coronavirus", "covid-19", "sars-cov-2"}:
-            #         idfs[term] = 0.538129071624817
+            for term in idfs:
+                if term in {"coronavirus", "covid-19", "sars-cov-2"}:
+                    idfs[term] = 0.27
             posting_lists = get_posting_lists(terms, c)
             indices = {term: 0 for term in terms}
+            stop = False
             # traverse the posting lists at the same time to get bm25 score
             while indices:
                 postings = {}
@@ -126,47 +125,37 @@ def main(input_file, output_file, run_tag, db_name):
                         if indices[term] >= len(posting_lists[term]):
                             indices.pop(term)
                 doc_scores.add_doc_score(doc_id, score)
-            all_doc_scores[i] = doc_scores
+            break
                 
         # get proximity score
-        for doc_scores in all_doc_scores.values():
-            for i, tup in enumerate(doc_scores.get_items()):
-                bm25_score = tup[0]
-                doc_id = tup[1]
-                spans = get_spans(doc_id, terms, c)
-                prox_score = get_max_prox_score(spans, set(terms))
-                new_score = (PROX_R * bm25_score + (1-PROX_R) * prox_score, doc_id)
-                doc_scores.assign_new_score(i, new_score)
+        for i, tup in enumerate(doc_scores.get_items()):
+            bm25_score = tup[0]
+            doc_id = tup[1]
+            spans = get_spans(doc_id, terms, c)
+            prox_score = get_max_prox_score(spans, set(terms))
+            new_score = (PROX_R * bm25_score + (1-PROX_R) * prox_score, doc_id)
+            doc_scores.assign_new_score(i, new_score)
 
-            # sort in descending order of score
-            doc_scores.sort_descending()
-        
+        # sort in descending order of score
+        doc_scores.sort_descending()
 
         print("Took %.2f seconds to get scores" % (time.time() - start))
-        list_of_lists = []
-        for heap in all_doc_scores.values():
-            list_of_lists.append(heap.get_items())
-        docs_count = 0
-        docs_added = set()
+        i = 0
         with open(output_file, "a") as f_out:
-            for tuples in zip(*list_of_lists):
-                for tup in tuples:
-                    doc = tup[1]
-                    if doc in docs_added:
-                        continue
-                    score = tup[0]
-                    # return max 1000 docs
-                    if docs_count >= 1000:
-                        # # no docs returned
-                        # if i == 0:
-                        #     # make dummy list
-                        #     output_vals = [str(tnum), "Q0", doc, str(i+1), str(score), run_tag, "\n"]
-                        #     f_out.write("\t".join(output_vals))
-                        break
-                    docs_count += 1
-                    docs_added.add(doc)
-                    output_vals = [str(tnum), "Q0", doc, str(docs_count), str(score), run_tag, "\n"]
-                    f_out.write("\t".join(output_vals))
+            for tup in doc_scores.get_items():
+                doc = tup[1]
+                score = tup[0]
+                # return max 1000 docs
+                if i >= 1000 or not doc_scores:
+                    # no docs returned
+                    if i == 0:
+                        # make dummy list
+                        output_vals = [str(tnum), "Q0", doc, str(i+1), str(score), run_tag, "\n"]
+                        f_out.write("\t".join(output_vals))
+                    break
+                i += 1
+                output_vals = [str(tnum), "Q0", doc, str(i), str(score), run_tag, "\n"]
+                f_out.write("\t".join(output_vals))
 
 if __name__ == "__main__":
     start_time = time.time()
