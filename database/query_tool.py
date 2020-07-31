@@ -107,7 +107,6 @@ def main(input_file, output_file, run_tag, db_name):
             #         idfs[term] = 0.538129071624817
             posting_lists = get_posting_lists(terms, c)
             indices = {term: 0 for term in terms}
-            stop = False
             # traverse the posting lists at the same time to get bm25 score
             while indices:
                 postings = {}
