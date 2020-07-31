@@ -1,0 +1,169 @@
+import sqlite3
+import spacy
+from bm25 import get_idf, get_idfs, calc_summand
+import time
+from constants import PROX_R, DOCS_K
+import plac
+from xml.dom import minidom
+from proximity import get_spans, get_max_prox_score
+from priority_queue import PQueue
+
+# Returns a list of queries
+def get_queries(input_file):
+    queries = []
+    xml_doc = minidom.parse(input_file)
+    topics = xml_doc.getElementsByTagName('topic')
+    for topic in topics:
+        queries.append(topic.getElementsByTagName('query')[0].childNodes[0].data)
+    return queries
+
+# Returns a list of lists containing terms given a query
+# If none of the query terms have synonyms, a list of just one list is returned
+# Else different versions of the query each have their own list
+def get_terms(query, nlp, stop_words):
+    cov_synonyms = {"coronavirus", "covid-19", "sars-cov-2"}
+    query_versions = []
+    terms = set()
+    doc = nlp(query)
+    print("Terms found:")
+    for token in doc:
+        # if token is not a punct and not a stop word
+        if not token.is_punct and token.text.lower() not in stop_words:
+            print("\t%s" % token.text)
+            terms.add(token.text.lower())
+    query_versions.append(list(terms))
+    for term in terms:
+        if term in cov_synonyms:
+            print("Synonyms found for term %s:" % term)
+            for syn in cov_synonyms:
+                if syn == term:
+                    continue
+                print("\t%s" % syn)
+                query_versions.append(list((terms - {term}) | {syn}))
+    return query_versions
+
+# Returns a dictionary with terms as keys and sorted lists of (doc id, term frequency) tuples as values
+# terms: query terms
+# c: cursor for database
+def get_posting_lists(terms, c):
+    posting_lists = {}
+    for term in terms:
+        # gets list of (doc id, frequency) tuples sorted by doc id
+        c.execute("select doc_id, frequency from terms_tf where term = :term;", {"term": term})
+        posting_lists[term] = c.fetchall()
+    return posting_lists
+
+@plac.annotations( 
+   db_name=("Database name", "positional", None, str)
+)
+def main(db_name):
+    conn = sqlite3.connect(db_name)
+    c = conn.cursor()
+    c.execute("PRAGMA foreign_keys = ON;")
+    conn.commit()
+
+    print("Gathering some data...")
+    # get stop words
+    stop_words = set()
+    c.execute("select word from stop_words;")
+    for row in c:
+        stop_words.add(row[0])
+    
+    # get total num of docs
+    c.execute("select count(doc_id) from doc_lengths;")
+    total_docs = c.fetchone()[0]
+    # get average doc length
+    c.execute("select avg(length) from doc_lengths;")
+    avg_length = c.fetchone()[0]
+    # get max idf for normalizing idfs from en-idf.txt
+    max_idf = get_idf(1, total_docs)
+    # get dictionary of doc id and doc lengths
+    doc_lenghts = {}
+    c.execute("select doc_id, length from doc_lengths;")
+    for row in c:
+        doc_lenghts[row[0]] = row[1]
+
+    print("Loading model...")
+    nlp = spacy.load("../custom_model3", disable=['bc5cdr_ner', 'bionlp13cg_ner', 'entity_ruler', 'web_ner'])
+
+    query = input("Enter the query: ")
+    tnum = int(input("Enter the topic number: "))
+    output_file = input("Enter output file path: ")
+    while query != "quit":
+        doc_scores = PQueue(DOCS_K)
+        print("Getting scores...")
+        start = time.time()
+        query_versions = get_terms(query, nlp, stop_words)
+        for terms in query_versions:
+            print("for terms ", terms)
+            idfs = get_idfs(terms, c, max_idf)
+            # for term in idfs:
+            #     if term in {"coronavirus", "covid-19", "sars-cov-2"}:
+            #         idfs[term] = 0.9777831166544537
+            posting_lists = get_posting_lists(terms, c)
+            indices = {term: 0 for term in terms}
+            # traverse the posting lists at the same time to get bm25 score
+            while indices:
+                postings = {}
+                score = 0
+                for term, index in indices.items():
+                    postings[term] = posting_lists[term][index][0]
+               # print(postings)
+                smallest_doc = min(postings.values())
+                for term, doc_id in postings.items():
+                    if doc_id == smallest_doc:
+                        doc_length = doc_lenghts[doc_id]
+                        idf = idfs[term]
+                        tf = posting_lists[term][indices[term]][1]
+                        score += calc_summand(tf, idf, doc_length, avg_length)
+                        indices[term] += 1
+                        # traversed the entire posting list
+                        if indices[term] >= len(posting_lists[term]):
+                            indices.pop(term)
+                doc_scores.add_doc_score(doc_id, score)
+
+            for term, plist in posting_lists.items():
+                print(term)
+                for i, doc in enumerate(plist):
+                    print(i, doc)
+                    if i > 10:
+                        break
+            
+                
+        # get proximity score
+        for i, tup in enumerate(doc_scores.get_items()):
+            bm25_score = tup[0]
+            doc_id = tup[1]
+            spans = get_spans(doc_id, terms, c)
+            prox_score = get_max_prox_score(spans, set(terms))
+            new_score = (PROX_R * bm25_score + (1-PROX_R) * prox_score, doc_id)
+            doc_scores.assign_new_score(i, new_score)
+
+        # sort in descending order of score
+        doc_scores.sort_descending()
+
+        print("Took %.2f seconds to get scores" % (time.time() - start))
+        i = 0
+        with open(output_file, "a") as f_out:
+            for tup in doc_scores.get_items():
+                doc = tup[1]
+                score = tup[0]
+                # return max 1000 docs
+                if i >= 1000 or not doc_scores:
+                    # no docs returned
+                    if i == 0:
+                        # make dummy list
+                        output_vals = [str(tnum), "Q0", doc, str(i+1), str(score), "\n"]
+                        f_out.write("\t".join(output_vals))
+                    break
+                i += 1
+                output_vals = [str(tnum), "Q0", doc, str(i), str(score), "\n"]
+                f_out.write("\t".join(output_vals))
+        query = input("Enter the query: ")
+        tnum = int(input("Enter the topic number: "))
+        output_file = input("Enter output file path: ")
+
+if __name__ == "__main__":
+    start_time = time.time()
+    plac.call(main)
+    print("-- %s seconds --" % (time.time() - start_time))
