@@ -24,31 +24,13 @@ def get_idf(count, total_docs):
     idf = math.log10(numerator/denominator)
     return idf
 
-# gets geometric mean of idf1 and idf2
-# returns idf1 if idf2 is None
-def get_geometric_mean(idf1, idf2, max_idf):
-    if idf2 == None:
-        return idf1
-    else:
-        idf2 = normalize_idf(idf2, max_idf)
-        return math.sqrt(idf1 * idf2)
-
-# gets normalized idf for idfs in en-idf.txt
-# max_idf: max idf in cord-19 corpus
-def normalize_idf(idf, max_idf):
-    # 13.999 is max idf in en-idf.txt
-    return (idf / 14) * max_idf
-
 # Returns a dictionary of the query terms and their idfs
 def get_idfs(terms, c, max_idf):
     idfs = {}
     for term in (set(terms)):
         # get idf of the term
-        c.execute("select idf, idf2 from terms_idf where term = :term;", {"term": term})
+        c.execute("select idf from terms_idf where term = :term;", {"term": term})
         result = c.fetchone()
-        idf1 = result[0] if result else 0
-        idf2 = result[1] if result else 0
-        # get geometric mean
-        idf = get_geometric_mean(idf1, idf2, max_idf)
+        idf = result[0] if result else 0
         idfs[term] = idf
     return idfs
