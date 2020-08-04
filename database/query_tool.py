@@ -98,11 +98,11 @@ def main(input_file, output_file, run_tag, db_name):
         tnum += 1
         query_versions = get_terms(query, nlp, stop_words)
         for terms in query_versions:
-            # print("for terms ", terms)
+            print("for terms ", terms)
             idfs = get_idfs(terms, c, max_idf)
             for term in idfs:
                 if term in {"coronavirus", "covid-19", "sars-cov-2"}:
-                    idfs[term] = 0.27
+                    idfs[term] = 0.9
             posting_lists = get_posting_lists(terms, c)
             indices = {term: 0 for term in terms}
             stop = False
@@ -125,7 +125,9 @@ def main(input_file, output_file, run_tag, db_name):
                         if indices[term] >= len(posting_lists[term]):
                             indices.pop(term)
                 doc_scores.add_doc_score(doc_id, score)
-            break
+            # doesn't do the other query versions
+            # break
+            
                 
         # get proximity score
         for i, tup in enumerate(doc_scores.get_items()):
