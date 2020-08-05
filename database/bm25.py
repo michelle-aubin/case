@@ -29,7 +29,7 @@ def get_idfs(terms, c, max_idf):
     idfs = {}
     for term in (set(terms)):
         # get idf of the term
-        c.execute("select idf from terms_idf where term = :term;", {"term": term})
+        c.execute("select idf from idf where term = :term;", {"term": term})
         result = c.fetchone()
         idf = result[0] if result else 0
         idfs[term] = idf

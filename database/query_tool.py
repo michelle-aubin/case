@@ -14,7 +14,8 @@ def get_queries(input_file):
     xml_doc = minidom.parse(input_file)
     topics = xml_doc.getElementsByTagName('topic')
     for topic in topics:
-        queries.append(topic.getElementsByTagName('query')[0].childNodes[0].data)
+        q = topic.getElementsByTagName('query')[0].childNodes[0].data
+        queries.append(q)
     return queries
 
 # Returns a list of lists containing terms given a query
@@ -23,12 +24,13 @@ def get_queries(input_file):
 def get_terms(query, nlp, stop_words):
     terms = set()
     doc = nlp(query)
-    print("Terms found:")
     for token in doc:
         # if token is not a punct and not a stop word
         if not token.is_punct and token.text.lower() not in stop_words:
-            print("\t%s" % token.text)
             terms.add(token.text.lower())
+    for ent in doc.ents:
+        terms.add(ent.text.lower())
+    print("Query terms: ", terms)
     return list(terms)
 
 # Returns a dictionary with terms as keys and sorted lists of (doc id, term frequency) tuples as values
@@ -38,7 +40,7 @@ def get_posting_lists(terms, c):
     posting_lists = {}
     for term in terms:
         # gets list of (doc id, frequency) tuples sorted by doc id
-        c.execute("select doc_id, frequency from terms_tf where term = :term;", {"term": term})
+        c.execute("select doc_id, frequency from tf where term = :term;", {"term": term})
         posting_lists[term] = c.fetchall()
     return posting_lists
 
@@ -78,13 +80,14 @@ def main(input_file, output_file, run_tag, db_name):
         doc_lengths[row[0]] = row[1]
 
     print("Loading model...")
-    nlp = spacy.load("../custom_model3", disable=['bc5cdr_ner', 'bionlp13cg_ner', 'entity_ruler', 'web_ner'])
+    nlp = spacy.load("../custom_model3")# , disable=['bc5cdr_ner', 'bionlp13cg_ner', 'entity_ruler', 'web_ner'])
 
     for tnum, query in enumerate(queries):
         doc_scores = PQueue(DOCS_K)
         print("Getting scores...")
         start = time.time()
         tnum += 1
+        print(tnum, query)
         terms = get_terms(query, nlp, stop_words)
         idfs = get_idfs(terms, c, max_idf)
         posting_lists = get_posting_lists(terms, c)

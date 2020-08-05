@@ -87,8 +87,8 @@ def insert_terms(conn, reset):
                         print("Bad line: ", entry)
     conn.commit()
     print("Populating terms took %s seconds" % (time.time() - start))
-    insert_terms_idf(conn)
-    insert_terms_tf(conn)
+    insert_idf(conn)
+    insert_tf(conn)
 
 # Inserts values into sentences table
 # conn: connection to the database
@@ -188,21 +188,20 @@ def insert_doc_lengths(conn):
     conn.commit()
     print("Populating doc_lengths took %s seconds" % (time.time() - start))
 
-# Inserts values into terms_idf table
+# Inserts values into idf table
 # conn: connection to the database
-def insert_terms_idf(conn):
+def insert_idf(conn):
     start = time.time()
     c = conn.cursor()
     c2 = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")
     conn.commit()
 
+    c.execute("drop table if exists idf;")
     c.executescript("""
-                    drop table if exists terms_idf;
-                    create table terms_idf (
+                    create table idf (
                         term      text,
                         idf       float,
-                        idf2      float,
                         primary key (term)
                     );
                     """)
@@ -211,45 +210,44 @@ def insert_terms_idf(conn):
     c.execute("select count(doc_id) from doc_lengths;")
     total_docs = c.fetchone()[0]
 
-    # get idfs from en-idf
-    # inserts original idf (not normalized)
-    en_idf = {}
-    with open("en-idf.txt", "r", encoding="utf-8") as f_in:
-        for line in f_in:
-            term, idf = line.split("@en:")
-            idf = float(idf.strip())
-            en_idf[term] = idf
-
+    # # idf for terms
     c.execute(""" select term, count(distinct doc_id)
             from terms
             group by term
     """)
-
     for row in c:
         term = row[0]
         idf = get_idf(row[1], total_docs)
-        idf2 = None
-        try:
-            idf2 = en_idf[term]
-        except:
-            idf2 = None
-        finally:
-            values = (term, idf, idf2)
-            c2.execute("insert into terms_idf values (?, ?, ?);", values)
+        values = (term, idf)
+        c2.execute("insert into idf values (?, ?);", values)
     conn.commit()
-    print("Populating terms_idf took %s seconds" % (time.time() - start))
+    # idf for entities
+    c.execute(""" select entity, count(distinct doc_id)
+            from entities
+            group by entity
+    """)
+    for row in c:
+        entity = row[0]
+        idf = get_idf(row[1], total_docs)
+        values = (entity, idf)
+        try:
+            c2.execute("insert into idf values (?, ?);", values)
+        except Exception:
+            continue
+    conn.commit()
+    print("Populating idf took %s seconds" % (time.time() - start))
 
 # Inserts values into term_tf table
 # conn: connection to the database
-def insert_terms_tf(conn):
+def insert_tf(conn):
     start = time.time()
     c = conn.cursor()
     c2 = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")
     conn.commit()
     c.executescript("""
-                    drop table if exists terms_tf;
-                    create table terms_tf (
+                    drop table if exists tf;
+                    create table tf (
                         term        text,
                         doc_id      char(8),
                         frequency   float,
@@ -257,6 +255,7 @@ def insert_terms_tf(conn):
                     );
                     """)
 
+    # tf for terms
     c.execute(""" select t.term, t.doc_id, count(*), d.length
                     from terms t, doc_lengths d
                     where t.doc_id = d.doc_id
@@ -264,9 +263,22 @@ def insert_terms_tf(conn):
             """)
     for row in c:
         values = (row[0], row[1], row[2] / row[3])
-        c2.execute("insert into terms_tf values (?, ?, ?);", values)
+        c2.execute("insert into tf values (?, ?, ?);", values)
     conn.commit()
-    print("Populating terms_tf took %s seconds" % (time.time() - start))
+    # tf for entities
+    c.execute(""" select e.entity, e.doc_id, count(*), d.length
+                    from entities e, doc_lengths d
+                    where e.doc_id = d.doc_id
+                    group by e.entity, e.doc_id;
+            """)
+    for row in c:
+        values = (row[0], row[1], row[2] / row[3])
+        try:
+            c2.execute("insert into tf values (?, ?, ?);", values)
+        except Exception:
+            continue
+    conn.commit()
+    print("Populating tf took %s seconds" % (time.time() - start))
 
 # Removes docs that are not in a given metadata file
 def remove_docs(conn):
