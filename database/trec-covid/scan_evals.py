@@ -6,7 +6,7 @@ from check_results import get_queries
    f_queries=("File name of the query set.", "positional", None, str)
 )
 def main(f_eval, f_queries):
-    query_precisions = {str(i) : {} for i in range(1,41)}
+    query_precisions = {str(i) : {} for i in range(1,46)}
     p_5_dict = {}
     with open(f_eval, "r") as f_in:
         for line in f_in:

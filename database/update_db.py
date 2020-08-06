@@ -12,10 +12,13 @@ def main():
     if ans.lower() == "y":
         reset = False
 
-    db_tools.insert_sentences(conn, reset)
-    db_tools.insert_stop_words(conn, "stopWords.txt")
-    db_tools.insert_doc_lengths(conn)
-    db_tools.insert_terms(conn, reset)
-    db_tools.insert_entities(conn, reset)
+    # db_tools.insert_sentences(conn, reset)
+    # db_tools.insert_stop_words(conn, "stopWords.txt")
+    # db_tools.insert_doc_lengths(conn)
+    # db_tools.insert_terms(conn, reset)
+    # db_tools.insert_entities(conn, reset)
+    # db_tools.remove_docs(conn)
+    # db_tools.insert_idf(conn)
+    db_tools.insert_tf(conn)
 
 main()

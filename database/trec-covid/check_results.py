@@ -36,7 +36,7 @@ def main(f_result, f_key, f_queries):
     queries = get_queries(f_queries)
     with open(f_result, "r") as f_in:
         for line in f_in:
-            tnum, q0, doc_id, rank, score, tag = line.strip().split("\t")
+            tnum, q0, doc_id, rank, score = line.strip().split("\t")
             tnum = int(tnum)
             judgements = get_judgements(f_key, tnum)
             try:
