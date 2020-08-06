@@ -1,6 +1,6 @@
 # parameters for BM25 ranking function
-BM25_B = 0.1
-BM25_K1 = 0.1
+BM25_B = 0.3
+BM25_K1 = 1.2
 BM25_delta = 1
 
 # parameters for proximity score function
