@@ -2,6 +2,7 @@ import sqlite3
 import math
 from constants import BM25_B, BM25_K1, BM25_delta
 
+
 # Calculates and returns the summand for one query term of bm25 formula
 # tf: the term frequency of the term in the doc
 # idf: the inverse document frequency of the term
