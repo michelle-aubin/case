@@ -33,6 +33,33 @@ def get_terms(query, nlp, stop_words):
     print("Query terms: ", terms)
     return list(terms)
 
+# Returns a list of lists containing terms given a query
+# If none of the query terms have synonyms, a list of just one list is returned
+# Else different versions of the query each have their own list
+def get_terms(query, nlp, stop_words):
+    cov_synonyms = {"coronavirus", "covid-19", "sars-cov-2", "covid"}
+    query_versions = []
+    terms = set()
+    doc = nlp(query)
+    print("Terms found:")
+    for token in doc:
+        # if token is not a punct and not a stop word
+        if not token.is_punct and token.text.lower() not in stop_words:
+            terms.add(token.text.lower())
+    for ent in doc.ents:
+        terms.add(ent.text.lower())
+    query_versions.append(list(terms))
+    print("Query terms: ", terms)
+    for term in terms:
+        if term in cov_synonyms:
+            print("Synonyms found for term %s:" % term)
+            for syn in cov_synonyms:
+                if syn == term:
+                    continue
+                print("\t%s" % syn)
+                query_versions.append(list((terms - {term}) | {syn}))
+    return query_versions
+
 # Returns a dictionary with terms as keys and sorted lists of (doc id, term frequency) tuples as values
 # terms: query terms
 # c: cursor for database
@@ -88,30 +115,34 @@ def main(input_file, output_file, run_tag, db_name):
         start = time.time()
         tnum += 1
         print(tnum, query)
-        terms = get_terms(query, nlp, stop_words)
-        idfs = get_idfs(terms, c, max_idf)
-        posting_lists = get_posting_lists(terms, c)
-        indices = {term: 0 for term in terms}
-        stop = False
-        # traverse the posting lists at the same time to get bm25 score
-        while indices:
-            postings = {}
-            score = 0
-            for term, index in indices.items():
-                postings[term] = posting_lists[term][index][0]
-            # print(postings)
-            smallest_doc = min(postings.values())
-            for term, doc_id in postings.items():
-                if doc_id == smallest_doc:
-                    doc_length = doc_lengths[doc_id]
-                    idf = idfs[term]
-                    tf = posting_lists[term][indices[term]][1]
-                    score += calc_summand(tf, idf, doc_length, avg_length)
-                    indices[term] += 1
-                    # traversed the entire posting list
-                    if indices[term] >= len(posting_lists[term]):
-                        indices.pop(term)
-            doc_scores.add_doc_score(doc_id, score)
+        query_versions = get_terms(query, nlp, stop_words)
+        for terms in query_versions:
+            # print("for terms ", terms)
+            idfs = get_idfs(terms, c, max_idf)
+            for term in idfs:
+                if term in {"coronavirus", "covid-19", "sars-cov-2", "covid"}:
+                    idfs[term] = 0.5
+            posting_lists = get_posting_lists(terms, c)
+            indices = {term: 0 for term in terms}
+            # traverse the posting lists at the same time to get bm25 score
+            while indices:
+                postings = {}
+                score = 0
+                for term, index in indices.items():
+                    postings[term] = posting_lists[term][index][0]
+                # print(postings)
+                smallest_doc = min(postings.values())
+                for term, doc_id in postings.items():
+                    if doc_id == smallest_doc:
+                        doc_length = doc_lengths[doc_id]
+                        idf = idfs[term]
+                        tf = posting_lists[term][indices[term]][1]
+                        score += calc_summand(tf, idf, doc_length, avg_length)
+                        indices[term] += 1
+                        # traversed the entire posting list
+                        if indices[term] >= len(posting_lists[term]):
+                            indices.pop(term)
+                doc_scores.add_doc_score(doc_id, score)
             
         # get proximity score
         for i, tup in enumerate(doc_scores.get_items()):
