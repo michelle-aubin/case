@@ -30,6 +30,7 @@ def get_terms(query, nlp, stop_words):
             terms.add(token.text.lower())
     for ent in doc.ents:
         terms.add(ent.text.lower())
+    print("Query terms: ", terms)
     return list(terms)
 
 # Returns a dictionary with terms as keys and sorted lists of (doc id, term frequency) tuples as values
@@ -46,12 +47,9 @@ def get_posting_lists(terms, c):
     return posting_lists
 
 @plac.annotations(
-   input_file=("Input file of queries", "positional", None, str),
-   output_file=("Output file", "positional", None, str), 
-   run_tag=("Tag representing the run", "positional", None, str),
    db_name=("Database name", "positional", None, str)
 )
-def main(input_file, output_file, run_tag, db_name):
+def main(db_name):
     conn = sqlite3.connect(db_name)
     c = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")
@@ -64,8 +62,6 @@ def main(input_file, output_file, run_tag, db_name):
     for row in c:
         stop_words.add(row[0])
 
-    # get queries from input file
-    queries = get_queries(input_file)
     # get dictionary of doc id and doc lengths
     doc_lengths = {}
     c.execute("select doc_id, length from doc_lengths;")
@@ -83,12 +79,11 @@ def main(input_file, output_file, run_tag, db_name):
     print("Loading model...")
     nlp = spacy.load("../custom_model3")# , disable=['bc5cdr_ner', 'bionlp13cg_ner', 'entity_ruler', 'web_ner'])
 
-    for tnum, query in enumerate(queries):
+    query = input("Enter the query: ")
+    while query != "quit":
         doc_scores = PQueue(DOCS_K)
         print("Getting scores...")
         start = time.time()
-        tnum += 1
-        print(tnum, query)
         terms = get_terms(query, nlp, stop_words)
         idfs = get_idfs(terms, c, max_idf)
         posting_lists = get_posting_lists(terms, c)
@@ -113,8 +108,8 @@ def main(input_file, output_file, run_tag, db_name):
                     if indices[term] >= len(posting_lists[term]):
                         indices.pop(term)
             doc_scores.add_doc_score(doc_id, score)
-            
-        if doc_scores.get_items():
+        
+        if doc_scores.get_items():    
             # get proximity score
             for i, tup in enumerate(doc_scores.get_items()):
                 bm25_score = tup[0]
@@ -128,24 +123,14 @@ def main(input_file, output_file, run_tag, db_name):
             doc_scores.sort_descending()
 
             print("Took %.2f seconds to get scores" % (time.time() - start))
-            i = 0
-            with open(output_file, "a") as f_out:
-                for tup in doc_scores.get_items():
-                    doc = tup[1]
-                    score = tup[0]
-                    # return max 1000 docs
-                    if i >= 1000 or not doc_scores:
-                        # no docs returned
-                        if i == 0:
-                            # make dummy list
-                            output_vals = [str(tnum), "Q0", doc, str(i+1), str(score), run_tag, "\n"]
-                            f_out.write("\t".join(output_vals))
-                        break
-                    i += 1
-                    output_vals = [str(tnum), "Q0", doc, str(i), str(score), run_tag, "\n"]
-                    f_out.write("\t".join(output_vals))
+
+            for i, tup in enumerate(doc_scores.get_items()):
+                doc = tup[1]
+                score = tup[0]
+                print(i+1, doc, score)
         else:
             print("No documents returned.")
+        query = input("Enter the query: ")
 
 if __name__ == "__main__":
     start_time = time.time()
