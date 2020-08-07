@@ -65,11 +65,6 @@ def main(input_file, output_file, run_tag, db_name):
 
     # get queries from input file
     queries = get_queries(input_file)
-    # get average doc length
-    c.execute("select avg(length) from doc_lengths;")
-    avg_length = c.fetchone()[0]
-    # get max idf for normalizing idfs from en-idf.txt
-    max_idf = get_idf(1, total_docs)
     # get dictionary of doc id and doc lengths
     doc_lengths = {}
     c.execute("select doc_id, length from doc_lengths;")
@@ -77,6 +72,12 @@ def main(input_file, output_file, run_tag, db_name):
         doc_lengths[row[0]] = row[1]
     # get total num of docs
     total_docs = len(doc_lengths)
+    # get average doc length
+    c.execute("select avg(length) from doc_lengths;")
+    avg_length = c.fetchone()[0]
+    # get max idf for normalizing idfs from en-idf.txt
+    max_idf = get_idf(1, total_docs)
+
 
     print("Loading model...")
     nlp = spacy.load("../custom_model3")# , disable=['bc5cdr_ner', 'bionlp13cg_ner', 'entity_ruler', 'web_ner'])
