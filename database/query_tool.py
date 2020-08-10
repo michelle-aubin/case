@@ -21,23 +21,7 @@ def get_queries(input_file):
 # Returns a list of lists containing terms given a query
 # If none of the query terms have synonyms, a list of just one list is returned
 # Else different versions of the query each have their own list
-def get_terms(query, nlp, stop_words):
-    terms = set()
-    doc = nlp(query)
-    for token in doc:
-        # if token is not a punct and not a stop word
-        if not token.is_punct and token.text.lower() not in stop_words:
-            terms.add(token.text.lower())
-    for ent in doc.ents:
-        terms.add(ent.text.lower())
-    print("Query terms: ", terms)
-    return list(terms)
-
-# Returns a list of lists containing terms given a query
-# If none of the query terms have synonyms, a list of just one list is returned
-# Else different versions of the query each have their own list
-def get_terms(query, nlp, stop_words):
-    cov_synonyms = {"coronavirus", "covid-19", "sars-cov-2", "covid"}
+def get_terms(query, nlp, stop_words, cov_synonyms):
     query_versions = []
     terms = set()
     doc = nlp(query)
@@ -105,6 +89,8 @@ def main(input_file, output_file, run_tag, db_name):
     c.execute("select doc_id, length from doc_lengths;")
     for row in c:
         doc_lengths[row[0]] = row[1]
+    
+    cov_synonyms = {"coronavirus", "covid-19", "sars-cov-2", "covid"}
 
     print("Loading model...")
     nlp = spacy.load("../custom_model3")# , disable=['bc5cdr_ner', 'bionlp13cg_ner', 'entity_ruler', 'web_ner'])
@@ -115,13 +101,13 @@ def main(input_file, output_file, run_tag, db_name):
         start = time.time()
         tnum += 1
         print(tnum, query)
-        query_versions = get_terms(query, nlp, stop_words)
+        query_versions = get_terms(query, nlp, stop_words, cov_synonyms)
         for terms in query_versions:
             # print("for terms ", terms)
             idfs = get_idfs(terms, c, max_idf)
-            for term in idfs:
-                if term in {"coronavirus", "covid-19", "sars-cov-2", "covid"}:
-                    idfs[term] = 0.5
+            # for term in idfs:
+            #     if term in cov_synonyms:
+            #         idfs[term] = 0.5
             posting_lists = get_posting_lists(terms, c)
             indices = {term: 0 for term in terms}
             # traverse the posting lists at the same time to get bm25 score
@@ -144,35 +130,38 @@ def main(input_file, output_file, run_tag, db_name):
                             indices.pop(term)
                 doc_scores.add_doc_score(doc_id, score)
             
-        # get proximity score
-        for i, tup in enumerate(doc_scores.get_items()):
-            bm25_score = tup[0]
-            doc_id = tup[1]
-            spans = get_spans(doc_id, terms, c)
-            prox_score = get_max_prox_score(spans, set(terms))
-            new_score = (PROX_R * bm25_score + (1-PROX_R) * prox_score, doc_id)
-            doc_scores.assign_new_score(i, new_score)
+        if doc_scores.get_items():
+            # get proximity score
+            for i, tup in enumerate(doc_scores.get_items()):
+                bm25_score = tup[0]
+                doc_id = tup[1]
+                spans = get_spans(doc_id, terms, c)
+                prox_score = get_max_prox_score(spans, set(terms))
+                new_score = (PROX_R * bm25_score + (1-PROX_R) * prox_score, doc_id)
+                doc_scores.assign_new_score(i, new_score)
 
-        # sort in descending order of score
-        doc_scores.sort_descending()
+            # sort in descending order of score
+            doc_scores.sort_descending()
 
-        print("Took %.2f seconds to get scores" % (time.time() - start))
-        i = 0
-        with open(output_file, "a") as f_out:
-            for tup in doc_scores.get_items():
-                doc = tup[1]
-                score = tup[0]
-                # return max 1000 docs
-                if i >= 1000 or not doc_scores:
-                    # no docs returned
-                    if i == 0:
-                        # make dummy list
-                        output_vals = [str(tnum), "Q0", doc, str(i+1), str(score), run_tag, "\n"]
-                        f_out.write("\t".join(output_vals))
-                    break
-                i += 1
-                output_vals = [str(tnum), "Q0", doc, str(i), str(score), run_tag, "\n"]
-                f_out.write("\t".join(output_vals))
+            print("Took %.2f seconds to get scores" % (time.time() - start))
+            i = 0
+            with open(output_file, "a") as f_out:
+                for tup in doc_scores.get_items():
+                    doc = tup[1]
+                    score = tup[0]
+                    # return max 1000 docs
+                    if i >= 1000 or not doc_scores:
+                        # no docs returned
+                        if i == 0:
+                            # make dummy list
+                            output_vals = [str(tnum), "Q0", doc, str(i+1), str(score), run_tag, "\n"]
+                            f_out.write("\t".join(output_vals))
+                        break
+                    i += 1
+                    output_vals = [str(tnum), "Q0", doc, str(i), str(score), run_tag, "\n"]
+                    f_out.write("\t".join(output_vals))
+        else:
+            print("No documents returned.")
 
 if __name__ == "__main__":
     start_time = time.time()
