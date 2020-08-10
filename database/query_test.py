@@ -30,7 +30,6 @@ def get_terms(query, nlp, stop_words):
             terms.add(token.text.lower())
     for ent in doc.ents:
         terms.add(ent.text.lower())
-    print("Query terms: ", terms)
     return list(terms)
 
 # Returns a dictionary with terms as keys and sorted lists of (doc id, term frequency) tuples as values
@@ -45,6 +44,22 @@ def get_posting_lists(terms, c):
         if not posting_lists[term]:
             posting_lists.pop(term)
     return posting_lists
+
+# Returns a dictionary of doc_ids with relevance score as value
+# Given a topic number, t
+def get_judgements(input_file, t):
+    judgements = {}
+    with open(input_file, "r") as f_in:
+        for line in f_in:
+            tnum, iteration, doc_id, score = line.split()
+            tnum = int(tnum)
+            if tnum < t:
+                continue
+            elif tnum > t:
+                return judgements
+            else:
+                judgements[doc_id] = int(score.strip())
+    return judgements
 
 @plac.annotations(
    db_name=("Database name", "positional", None, str)
@@ -80,6 +95,7 @@ def main(db_name):
     nlp = spacy.load("../custom_model3")# , disable=['bc5cdr_ner', 'bionlp13cg_ner', 'entity_ruler', 'web_ner'])
 
     query = input("Enter the query: ")
+    tnum = int(input("Enter the topic number: "))
     while query != "quit":
         doc_scores = PQueue(DOCS_K)
         print("Getting scores...")
@@ -124,13 +140,24 @@ def main(db_name):
 
             print("Took %.2f seconds to get scores" % (time.time() - start))
 
+            judgements = get_judgements("trec-covid/round4/qrels-covid_d4_j0.5-4.txt", tnum)
             for i, tup in enumerate(doc_scores.get_items()):
                 doc = tup[1]
                 score = tup[0]
-                print(i+1, doc, score)
+                try:
+                    rel = judgements[doc]
+                except KeyError:
+                    rel = 0
+                finally:
+                    if rel == 0:
+                        rel_str = ""
+                    else:
+                        rel_str = "- relevant"
+                    print("%d. %s   %.3f %s" % (i+1, doc, score, rel_str))
         else:
             print("No documents returned.")
         query = input("Enter the query: ")
+        tnum = int(input("Enter the topic number: "))
 
 if __name__ == "__main__":
     start_time = time.time()
