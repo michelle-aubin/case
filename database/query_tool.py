@@ -105,9 +105,9 @@ def main(input_file, output_file, run_tag, db_name):
         for terms in query_versions:
             # print("for terms ", terms)
             idfs = get_idfs(terms, c, max_idf)
-            # for term in idfs:
-            #     if term in cov_synonyms:
-            #         idfs[term] = 0.5
+            for term in idfs:
+                if term in cov_synonyms:
+                    idfs[term] = 0.995
             posting_lists = get_posting_lists(terms, c)
             indices = {term: 0 for term in terms}
             # traverse the posting lists at the same time to get bm25 score
