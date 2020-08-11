@@ -123,7 +123,7 @@ def main(db_name):
                     # traversed the entire posting list
                     if indices[term] >= len(posting_lists[term]):
                         indices.pop(term)
-            doc_scores.add_doc_score(doc_id, score)
+            doc_scores.add_doc_score(smallest_doc, score)
         
         if doc_scores.get_items():    
             # get proximity score
