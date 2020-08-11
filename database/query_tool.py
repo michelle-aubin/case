@@ -102,12 +102,12 @@ def main(input_file, output_file, run_tag, db_name):
         tnum += 1
         print(tnum, query)
         query_versions = get_terms(query, nlp, stop_words, cov_synonyms)
-        for terms in query_versions:
+        for qver_num, terms in enumerate(query_versions):
             # print("for terms ", terms)
             idfs = get_idfs(terms, c, max_idf)
             for term in idfs:
                 if term in cov_synonyms:
-                    idfs[term] = 0.995
+                    idfs[term] = 0.1
             posting_lists = get_posting_lists(terms, c)
             indices = {term: 0 for term in terms}
             # traverse the posting lists at the same time to get bm25 score
@@ -128,13 +128,15 @@ def main(input_file, output_file, run_tag, db_name):
                         # traversed the entire posting list
                         if indices[term] >= len(posting_lists[term]):
                             indices.pop(term)
-                doc_scores.add_doc_score(doc_id, score)
+                doc_scores.add_doc_score(smallest_doc, score, qver_num)
             
         if doc_scores.get_items():
             # get proximity score
             for i, tup in enumerate(doc_scores.get_items()):
                 bm25_score = tup[0]
                 doc_id = tup[1]
+                qver_num = tup[2]
+                terms = query_versions[qver_num]
                 spans = get_spans(doc_id, terms, c)
                 prox_score = get_max_prox_score(spans, set(terms))
                 new_score = (PROX_R * bm25_score + (1-PROX_R) * prox_score, doc_id)
