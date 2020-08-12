@@ -7,6 +7,7 @@ import plac
 from xml.dom import minidom
 from proximity import get_spans, get_max_prox_score
 from priority_queue import PQueue
+from collections import defaultdict
 
 # Returns a list of queries
 def get_queries(input_file):
@@ -32,15 +33,37 @@ def get_terms(query, nlp, stop_words):
         terms.add(ent.text.lower())
     return list(terms)
 
+def get_synonyms(term):
+    synonyms = [{"coronavirus", "2019-ncov", "sars-cov-2", "hcov-19"},
+                {"covid-19", "sars-cov-2", "covid 19"},
+                {"covid", "covid-19", "covid 19"}
+                ]
+    for tup in synonyms:
+        if term in tup:
+            return tup
+    return None
+
+
 # Returns a dictionary with terms as keys and sorted lists of (doc id, term frequency) tuples as values
 # terms: query terms
 # c: cursor for database
 def get_posting_lists(terms, c):
     posting_lists = {}
     for term in terms:
-        # gets list of (doc id, frequency) tuples sorted by doc id
-        c.execute("select doc_id, frequency from tf where term = :term;", {"term": term})
-        posting_lists[term] = c.fetchall()
+        synonyms = get_synonyms(term)
+        if synonyms:
+            syn_posting = defaultdict(lambda: 0)
+            for syn_term in synonyms:
+                c.execute("select doc_id, frequency from tf where term = :term;", {"term": syn_term})
+                for tup in c:
+                    doc_id = tup[0]
+                    freq = tup[1]
+                    syn_posting[doc_id] += freq
+            posting_lists[term] = sorted(syn_posting.items())
+        else:
+            # gets list of (doc id, frequency) tuples sorted by doc id
+            c.execute("select doc_id, frequency from tf where term = :term;", {"term": term})
+            posting_lists[term] = c.fetchall()
         if not posting_lists[term]:
             posting_lists.pop(term)
     return posting_lists
