@@ -35,8 +35,7 @@ def get_terms(query, nlp, stop_words):
 
 def get_synonyms(term):
     synonyms = [{"coronavirus", "2019-ncov", "sars-cov-2", "hcov-19"},
-                {"covid-19", "sars-cov-2", "covid 19"},
-                {"covid", "covid-19", "covid 19"}
+                {"covid-19", "covid", "covid 19"}
                 ]
     for tup in synonyms:
         if term in tup:
