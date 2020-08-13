@@ -35,13 +35,15 @@ def get_terms(query, nlp, stop_words, cov_synonyms):
     query_versions.append(list(terms))
     print("Query terms: ", terms)
     for term in terms:
-        if term in cov_synonyms:
-            print("Synonyms found for term %s:" % term)
-            for syn in cov_synonyms:
-                if syn == term:
-                    continue
-                print("\t%s" % syn)
-                query_versions.append(list((terms - {term}) | {syn}))
+        for syn_list in cov_synonyms:
+            if term in cov_synonyms:
+                print("Synonyms found for term %s:" % term)
+                for syn in syn_list:
+                    if syn == term:
+                        continue
+                    print("\t%s" % syn)
+                    query_versions.append(list((terms - {term}) | {syn}))
+                break
     return query_versions
 
 # Returns a dictionary with terms as keys and sorted lists of (doc id, term frequency) tuples as values
@@ -90,7 +92,9 @@ def main(input_file, output_file, run_tag, db_name):
     for row in c:
         doc_lengths[row[0]] = row[1]
     
-    cov_synonyms = {"coronavirus", "covid-19", "sars-cov-2", "covid"}
+    cov_synonyms = [{"coronavirus", "2019-ncov", "sars-cov-2", "hcov-19"},
+            {"covid-19", "covid", "covid 19"}
+            ]
 
     print("Loading model...")
     nlp = spacy.load("../custom_model3")# , disable=['bc5cdr_ner', 'bionlp13cg_ner', 'entity_ruler', 'web_ner'])
@@ -106,7 +110,7 @@ def main(input_file, output_file, run_tag, db_name):
             # print("for terms ", terms)
             idfs = get_idfs(terms, c, max_idf)
             for term in idfs:
-                if term in cov_synonyms:
+                if term in cov_synonyms[0] or term in cov_synonyms[1]:
                     idfs[term] = 0.1
             posting_lists = get_posting_lists(terms, c)
             indices = {term: 0 for term in terms}
