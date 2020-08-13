@@ -32,8 +32,10 @@ def get_terms(query, nlp, stop_words):
     return list(terms)
 
 def get_synonyms(term):
-    synonyms = [{"coronavirus", "2019-ncov", "sars-cov-2", "hcov-19"},
-                {"covid-19", "covid", "covid 19"}
+    synonyms = [
+                {"covid-19", "sars-cov-2", "covid 19"},
+                {"coronavirus", "common cold"},
+                {"covid", "covid-19", "covid 19"}
                 ]
     for tup in synonyms:
         if term in tup:
@@ -46,6 +48,7 @@ def get_synonyms(term):
 # c: cursor for database
 def get_posting_lists(terms, c):
     posting_lists = {}
+    syns_used = defaultdict(lambda: set())
     for term in terms:
         synonyms = get_synonyms(term)
         if synonyms:
@@ -56,6 +59,7 @@ def get_posting_lists(terms, c):
                     doc_id = tup[0]
                     freq = tup[1]
                     syn_posting[doc_id] += freq
+                    syns_used[doc_id].add(syn_term)
             posting_lists[term] = sorted(syn_posting.items())
         else:
             # gets list of (doc id, frequency) tuples sorted by doc id
@@ -63,7 +67,7 @@ def get_posting_lists(terms, c):
             posting_lists[term] = c.fetchall()
         if not posting_lists[term]:
             posting_lists.pop(term)
-    return posting_lists
+    return posting_lists, syns_used
 
 @plac.annotations(
    input_file=("Input file of queries", "positional", None, str),
@@ -111,9 +115,9 @@ def main(input_file, output_file, run_tag, db_name):
         print(tnum, query)
         terms = get_terms(query, nlp, stop_words)
         idfs = get_idfs(terms, c, max_idf)
-        posting_lists = get_posting_lists(terms, c)
+        posting_lists, syns_used = get_posting_lists(terms, c)
         indices = {term: 0 for term in posting_lists}
-        terms = [term for term in posting_lists]
+        terms = {term for term in posting_lists}
         print("Query terms", terms)
         # traverse the posting lists at the same time to get bm25 score
         while indices:
@@ -139,8 +143,12 @@ def main(input_file, output_file, run_tag, db_name):
             for i, tup in enumerate(doc_scores.get_items()):
                 bm25_score = tup[0]
                 doc_id = tup[1]
-                spans = get_spans(doc_id, terms, c)
-                prox_score = get_max_prox_score(spans, set(terms))
+                if syns_used:
+                    spans = get_spans(doc_id, terms | syns_used[doc_id], c)
+                    prox_score = get_max_prox_score(spans, terms | syns_used[doc_id])
+                else:
+                    spans = get_spans(doc_id, terms, c)
+                    prox_score = get_max_prox_score(spans, terms)
                 new_score = (PROX_R * bm25_score + (1-PROX_R) * prox_score, doc_id)
                 doc_scores.assign_new_score(i, new_score)
 
