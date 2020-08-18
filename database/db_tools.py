@@ -106,7 +106,8 @@ def insert_sentences(conn, reset):
                             doc_id      char(8),
                             sent_id     int,
                             sentence    text,
-                            primary key (doc_id,sent_id)        
+                            primary key (doc_id,sent_id),
+                            foreign key (doc_id) references doc_lengths on delete cascade        
                         );
                         """)
         conn.commit()
@@ -156,35 +157,38 @@ def insert_stop_words(conn, words_file):
 
 # Inserts values into doc_lengths table
 # conn: connection to the database
-def insert_doc_lengths(conn):
+def insert_doc_lengths(conn, reset):
     start = time.time()
     c = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")
     conn.commit()
 
-    # get all sentences for docs
-    c.execute(""" select sentence, doc_id
-                    from sentences
-                """)
-    
-    doc_lengths = defaultdict(lambda: 0)
-    # count words by splitting on spaces
-    for row in c:
-        sentence = row[0].split()
-        doc_id = row[1]
-        doc_lengths[doc_id] += len(sentence)
+    if reset:
+        c.executescript("""
+                        drop table if exists doc_lengths;
+                        create table doc_lengths (
+                            doc_id      char(8),
+                            length      int,
+                            primary key (doc_id)
+                        );
+                        """)
+        conn.commit()
 
-    c.executescript("""
-                    drop table if exists doc_lengths;
-                    create table doc_lengths (
-                        doc_id      char(8),
-                        length      int,
-                        primary key (doc_id)
-                    );
-                    """)
+    # iterate through files in sentences directory
+    for root, dirs, files in os.walk("..\lengths"):
+        for name in files:
+            data = []
+            fpath = os.path.join(root, name)
+            with open(fpath, "r", encoding="utf-8") as f_in:
+                for line in f_in:
+                    entry = line.split(SEP)
+                    try:
+                        values = (entry[0], int(entry[1]).strip('\n'))
+                        c.execute("insert into doc_lengths values (?, ?);", values)
+                    except Exception as e:
+                        print(e)
+                        print("Bad line: ", entry)
 
-    for doc_id, length in doc_lengths.items():
-        c.execute("insert into doc_lengths values (?, ?);", (doc_id, length))
     conn.commit()
     print("Populating doc_lengths took %s seconds" % (time.time() - start))
 
@@ -251,7 +255,8 @@ def insert_tf(conn):
                         term        text,
                         doc_id      char(8),
                         frequency   float,
-                        primary key (term, doc_id)
+                        primary key (term, doc_id),
+                        foreign key (doc_id) references doc_lengths on delete cascade
                     );
                     """)
 
