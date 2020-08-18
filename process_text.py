@@ -97,7 +97,7 @@ def build_output(doc, doc_id, ent_f_out, sent_f_out, term_f_out, len_f_out):
    batch_size=("Number of docs to run through pipeline at once", "positional", None, int),
    num_p=("Number of processes to use", "positional", None, int)   
 )
-# creates text files used to populate entities, sentences, and terms table in the databse
+# creates text files used to populate entities, sentences, terms, and doc lengths tables in the databse
 def main(meta_f, date, batch_size, num_p):
     # load spacy pipeline
     print("Loading model...")
@@ -105,7 +105,7 @@ def main(meta_f, date, batch_size, num_p):
     nlp = spacy.load("custom_model3", disable=["tagger"])
     print("Loading model took %s seconds --" % (time.time() - model_time))
  
-    # make directories for entities, sentences and terms
+    # make directories for entities, sentences, terms and doc lengths
     ent_out_dir = "entities/" + "ent" + date + "/"
     ent_f_out_path = Path(ent_out_dir)
     if not ent_f_out_path.exists():
