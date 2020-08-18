@@ -10,6 +10,7 @@ from priority_queue import PQueue
 from collections import defaultdict
 
 # Returns a list of queries
+# input_file: a trec-covid .xml file containing the queries
 def get_queries(input_file):
     queries = []
     xml_doc = minidom.parse(input_file)
@@ -19,7 +20,7 @@ def get_queries(input_file):
         queries.append(q)
     return queries
 
-# Returns a list of query terms
+# Returns a set of query terms given a query string
 def get_terms(query, nlp, stop_words):
     terms = set()
     doc = nlp(query)
@@ -29,8 +30,9 @@ def get_terms(query, nlp, stop_words):
             terms.add(token.text.lower())
     for ent in doc.ents:
         terms.add(ent.text.lower())
-    return list(terms)
+    return terms
 
+# Given a term, returns a set of synonyms including the term
 def get_synonyms(term):
     synonyms = [
                 {"covid-19", "sars-cov-2", "covid 19"},
