@@ -313,10 +313,8 @@ def remove_docs(conn):
             doc_id = row[0]
             if doc_id not in docs:
                 c2.execute("delete from doc_lengths where doc_id = :doc_id", {"doc_id": doc_id})
-                c2.execute("delete from entities where doc_id = :doc_id", {"doc_id": doc_id})
-                c2.execute("delete from terms where doc_id = :doc_id", {"doc_id": doc_id})
-                c2.execute("delete from sentences where doc_id = :doc_id", {"doc_id": doc_id})
                 count += 1
         conn.commit()
         # could recalculate idfs
         print("Deleted %d docs" % count)
+        
