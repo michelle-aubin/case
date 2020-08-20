@@ -26,9 +26,9 @@ def get_idf(count, total_docs):
     return idf
 
 # Returns a dictionary of the query terms and their idfs
-def get_idfs(terms, c, max_idf):
+def get_idfs(terms, c):
     idfs = {}
-    for term in (set(terms)):
+    for term in (terms):
         # get idf of the term
         c.execute("select idf from idf where term = :term;", {"term": term})
         result = c.fetchone()
