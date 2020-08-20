@@ -2,6 +2,7 @@ import sqlite3
 import spacy
 from collections import defaultdict
 import time
+from textwrap import wrap
 from bm25 import get_idfs, calc_summand
 from priority_queue import PQueue
 from proximity import get_spans, get_max_prox_score
@@ -156,7 +157,22 @@ class Case:
                 doc = tup[1]
                 c.execute("select sentence from sentences \
                             where doc_id = :doc_id \
-                            and sent_id = 0;", {"doc_id": doc})
-                title = c.fetchone()[0]
-                print(str(i) + ". " + doc + ": " + title)
+                            and sent_id <= 5;", {"doc_id": doc})
+                sentences = c.fetchall()
+                title = sentences[0][0][0:-1]
+                abstract = [sent[0] for sent in sentences[1:]]
+                abstract = " ".join(abstract) + ".."
+                abstract = wrap(abstract)
+                print(title)
+                for sent in abstract:
+                    print("\t" + sent)
+                # print link to the document here
+                print("Link: ")
+                command = input("Press enter to view next document or type \"quit\" to enter another query\n")
+                if command == "quit":
+                    print("\n")
+                    return
+                else:
+                    print("\n")
+
 
