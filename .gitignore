@@ -16,3 +16,8 @@ weird_docs.txt
 terms/
 sentences/
 entities/
+database/trec-covid/round3/results/
+database/trec-covid/round3/evaluations/
+database/trec-covid/round4/results/
+database/trec-covid/round4/evaluations/
+
