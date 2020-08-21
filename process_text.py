@@ -10,6 +10,17 @@ from pathlib import Path
 
 SEP = "|!|"
 
+# writes the web url for a document to a file
+def add_url(urls_out_dir, row_dict):
+    doc_id = row_dict['cord_uid']
+    urls = row_dict['url']
+    url = urls.split("; ")[0]
+    with open(urls_out_dir+"urls.txt", "a", encoding="utf-8") as f_out:
+        data_list = [doc_id, url]
+        output_str = SEP.join(data_list) + "\n"
+        f_out.write(output_str)
+
+
 # returns a tuple of (full text, cord uid) for a doc given
 # a dictionary from the metadata
 def get_text_id_tuple(row_dict, date):
@@ -22,7 +33,7 @@ def get_text_id_tuple(row_dict, date):
     abstract = row_dict['abstract']
     if abstract:
         texts.append(abstract)
-    with open("../"+date+"/"+row_dict['json_file'], "r", encoding="utf-8") as f_json:
+    with open(date+"/"+row_dict['json_file'], "r", encoding="utf-8") as f_json:
         full_text_dict = json.load(f_json)
         for paragraph_dict in full_text_dict['body_text']:
             text = paragraph_dict['text'].replace('\n', '')
@@ -92,7 +103,7 @@ def build_output(doc, doc_id, ent_f_out, sent_f_out, term_f_out, len_f_out):
     len_f_out.write(data_str)
 
 @plac.annotations(
-   meta_f=("CORD-19 Metadata input file", "positional", None, str),
+   meta_f=("Path to CORD-19 Metadata input file", "positional", None, str),
    date=("Date of CORD-19 version [YYYY-MM-DD]", "positional", None, str),
    batch_size=("Number of docs to run through pipeline at once", "positional", None, int),
    num_p=("Number of processes to use", "positional", None, int)   
@@ -102,10 +113,10 @@ def main(meta_f, date, batch_size, num_p):
     # load spacy pipeline
     print("Loading model...")
     model_time = time.time()
-    nlp = spacy.load("custom_model3", disable=["tagger"])
+    nlp = spacy.load("system/custom_model3", disable=["tagger"])
     print("Loading model took %s seconds --" % (time.time() - model_time))
  
-    # make directories for entities, sentences, terms and doc lengths
+    # make directories for entities, sentences, terms, doc lengths and urls
     ent_out_dir = "entities/" + "ent" + date + "/"
     ent_f_out_path = Path(ent_out_dir)
     if not ent_f_out_path.exists():
@@ -122,6 +133,10 @@ def main(meta_f, date, batch_size, num_p):
     len_f_out_path = Path(len_out_dir)
     if not len_f_out_path.exists():
         len_f_out_path.mkdir(parents=True)
+    urls_out_dir = "urls/" + "url" + date + "/"
+    urls_f_out_path = Path(urls_out_dir)
+    if not urls_f_out_path.exists():
+        urls_f_out_path.mkdir(parents=True)
 
     # make list of (full text, cord uid) tuples
     print("Reading documents...")
@@ -129,7 +144,8 @@ def main(meta_f, date, batch_size, num_p):
     with open(meta_f, "r", encoding="utf-8") as f_meta:
         articles = []
         metadata = csv.DictReader(f_meta)
-        for row_num, row in enumerate(metadata):
+        for row in metadata:
+            add_url(urls_out_dir, row)
             articles.append(get_text_id_tuple(row, date))
     print("Reading %d documents took %s seconds" % (len(articles), time.time() - read_time))
     # batch docs and send to pipeline with multiprocessing

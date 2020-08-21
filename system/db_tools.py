@@ -154,6 +154,41 @@ def insert_stop_words(conn, words_file):
     conn.commit()
     print("Populating stop_words took %s seconds" % (time.time() - start))
 
+# Inserts values into urls table
+def insert_urls(conn, reset):
+    start = time.time()
+    c = conn.cursor()
+    c.execute("PRAGMA foreign_keys = ON;")
+    conn.commit()
+    if reset:
+        c.executescript("""
+                        drop table if exists urls;
+                        create table urls (
+                            doc_id      char(8),
+                            url      text,
+                            primary key (doc_id)
+                            foreign key(doc_id) references doc_lengths on delete cascade
+                        );
+                        """)
+        conn.commit()       
+    # iterate through files in sentences directory
+    for root, dirs, files in os.walk("../urls"):
+        for name in files:
+            data = []
+            fpath = os.path.join(root, name)
+            with open(fpath, "r", encoding="utf-8") as f_in:
+                for line in f_in:
+                    entry = line.split(SEP)
+                    try:
+                        values = (entry[0], entry[1].strip('\n'))
+                        c.execute("insert into urls values (?, ?);", values)
+                    except Exception as e:
+                        print(e)
+                        print("Bad line: ", entry)
+
+    conn.commit()
+    print("Populating urls took %s seconds" % (time.time() - start))   
+
 
 # Inserts values into doc_lengths table
 # conn: connection to the database
@@ -174,7 +209,7 @@ def insert_doc_lengths(conn, reset):
                         """)
         conn.commit()
 
-    # iterate through files in sentences directory
+    # iterate through files in doc lengths directory
     for root, dirs, files in os.walk("..\lengths"):
         for name in files:
             data = []
@@ -315,6 +350,7 @@ def remove_docs(conn):
                 c2.execute("delete from doc_lengths where doc_id = :doc_id", {"doc_id": doc_id})
                 count += 1
         conn.commit()
-        # could recalculate idfs
         print("Deleted %d docs" % count)
+        # recalculate idfs
+        insert_idf(conn)
         

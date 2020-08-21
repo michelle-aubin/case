@@ -20,4 +20,6 @@ database/trec-covid/round3/results/
 database/trec-covid/round3/evaluations/
 database/trec-covid/round4/results/
 database/trec-covid/round4/evaluations/
-
+system/__pycache__/
+system/trec-covid/
+system/cord19-2020-06-19.db
