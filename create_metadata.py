@@ -1,21 +1,29 @@
 import csv
 import sqlite3
+import plac
 
-def main():
+
+@plac.annotations(
+   meta_f=("Path to CORD-19 Metadata input file", "positional", None, str),
+   date=("Date of CORD-19 version [YYYY-MM-DD]", "positional", None, str),
+   db=("Path to database", "option", None, str)
+)
+def main(meta_f, date, db):
     in_db = set()
-    conn = sqlite3.connect("database/cord19-round4.db")
-    c = conn.cursor()
-    c.execute("PRAGMA foreign_keys = ON;")
-    conn.commit()
-    c.execute("select doc_id from doc_lengths;")
-    for row in c:
-        in_db.add(row[0])
+    if db:
+        conn = sqlite3.connect(db)
+        c = conn.cursor()
+        c.execute("PRAGMA foreign_keys = ON;")
+        conn.commit()
+        c.execute("select doc_id from doc_lengths;")
+        for row in c:
+            in_db.add(row[0])
     
-    with open(r'../cord-19_2020-07-16/2020-07-16/metadata.csv', "r", encoding="utf-8") as f_meta:
-        with open("clean-metadata-2020-07-16.csv", "w", encoding="utf-8", newline='') as f_out:
+    with open(meta_f, "r", encoding="utf-8") as f_meta:
+        with open("clean-metadata-"+date+".csv", "w", encoding="utf-8", newline='') as f_out:
             seen = set()
             clean_metadata = csv.writer(f_out)
-            clean_metadata.writerow(['cord_uid','title','abstract','json_file'])
+            clean_metadata.writerow(['cord_uid','title','abstract','json_file', 'url'])
             metadata = csv.DictReader(f_meta)
             for row in metadata:
                 urls = []
@@ -29,10 +37,10 @@ def main():
                     cord_uid = row.get('cord_uid')
                     title = row.get('title')
                     abstract = row.get('abstract')
+                    web_url = row.get('url')
                     if cord_uid not in seen and cord_uid not in in_db:
                         seen.add(cord_uid)
-                        clean_metadata.writerow([cord_uid, title, abstract, urls[0]])
-                    else:
-                        print("Duplicate or already in db %s" % cord_uid)
+                        clean_metadata.writerow([cord_uid, title, abstract, urls[0], web_url])
 
-main()
+if __name__ == "__main__":
+    plac.call(main)
