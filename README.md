@@ -1,4 +1,4 @@
-# CORD-19 Alberta Search System
+# CORD-19 Alberta Search Engine
 In response to the COVID-19 pandemic, the Allen Institute for AI has developed the [COVID-19 Open Research Dataset (CORD-19)](https://www.semanticscholar.org/cord19/download), a corpus of COVID-19 related scientific publications. We present the CORD-19 Alberta Search Engine (CASE), a search engine that allows users to search the CORD-19 corpus using natural language queries. CASE expands upon the BM25+ ranking function by incorporating the proximity and synonyms of query terms into our ranking. For more information on our system [click here](https://docs.google.com/document/d/1sQ-h6G24PVaV3sALfM2Df6t1keHQWwjwvkdRJW7vqRY/edit?usp=sharing).
 
 ## Usage
@@ -43,4 +43,4 @@ Press enter to view next document or type "return" to enter another query
 ```
 
 # Credits
-The CORD-19 Alberta Search engine is developed at the University of Alberta by Michelle Aubin (phiangda@ualberta.ca) under the supervision of Davood Rafiei (drafiei@ualberta.ca)
+The CORD-19 Alberta Search Engine is developed at the University of Alberta by Michelle Aubin (phiangda@ualberta.ca) under the supervision of Davood Rafiei (drafiei@ualberta.ca)
