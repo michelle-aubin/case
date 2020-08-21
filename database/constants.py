@@ -4,7 +4,7 @@ BM25_K1 = 1.2
 BM25_delta = 1
 
 # parameters for proximity score function
-PROX_K = 20
+PROX_K = 5
 PROX_R = 0.75
 
 # the num of docs from the posting lists to rank 
