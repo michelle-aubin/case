@@ -11,14 +11,19 @@ from constants import PROX_R, DOCS_K
 # The search engine
 class Case:
     def __init__(self, db_name):
-        print("Loading CORD-19 Alberta Search Engine...")
+        print("Loading...")
         self.db_conn = sqlite3.connect(db_name)
         self.nlp = spacy.load("custom_model3")
         self.stop_words = self.init_stop_words()
         self.doc_lengths = self.init_doc_lengths()
         self.total_doc_num = len(self.doc_lengths)
         self.avg_doc_length = self.init_avg_doc_length()
-        print("Done loading.")
+        self.print_welcome()
+
+    # Prints a welcome message
+    def print_welcome(self):
+        print("Welcome to the CORD-19 Alberta Search Engine.")
+        print("There are currently %d documents in the database.\n" % (self.total_doc_num))
 
     # Returns a set of stop words
     def init_stop_words(self):
@@ -168,8 +173,8 @@ class Case:
                     print("\t" + sent)
                 # print link to the document here
                 print("Link: ")
-                command = input("Press enter to view next document or type \"quit\" to enter another query\n")
-                if command == "quit":
+                command = input("Press enter to view next document or type \"return\" to enter another query\n")
+                if command == "return":
                     print("\n")
                     return
                 else:
